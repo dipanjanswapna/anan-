@@ -1,22 +1,39 @@
-# @anan/api
+# ANAN API
 
-NestJS modular-monolith API for ANAN.
+NestJS modular-monolith API. Local development requires Node.js 22+, pnpm 10+, and Docker Compose.
 
-## Local development
+## Start PostgreSQL
 
-1. Copy `.env.example` to `.env` and adjust values for your local services.
-2. From the repository root run `pnpm install`.
-3. Generate the Prisma client with `pnpm --filter @anan/api prisma:generate`.
-4. Start the API with `pnpm dev:api`.
+From the repository root:
 
-The initial health endpoint is `GET /api/v1/health`.
+```powershell
+docker compose up -d postgres
+docker compose ps
+```
 
-## Architecture
+The local-only database is available at `localhost:5432`. Its credentials are for development only and must never be reused in production.
 
-- `modules/health`: service liveness endpoint.
-- `modules/customers`, `modules/sellers`, `modules/catalog`: domain boundaries for upcoming features.
-- `prisma/schema.prisma`: initial identity, seller, category and product data model.
+## Configure and run the API
 
-All prices are represented in integer Bangladeshi paisa (`BigInt`), never floating-point currency. Product and seller approval states are explicit. Authentication, authorization, database migrations and business endpoints are intentionally not exposed until their security and transaction rules are implemented.
+```powershell
+Copy-Item apps/api/.env.example apps/api/.env
+pnpm install
+pnpm --filter @anan/api prisma:generate
+pnpm dev:api
+```
 
-Never commit real `.env` files, credentials, customer data or production secrets.
+API liveness: `GET http://localhost:4000/api/v1/health`
+
+Database readiness: `GET http://localhost:4000/api/v1/health/ready`
+
+Readiness returns HTTP 503 when PostgreSQL cannot be reached. The liveness endpoint intentionally remains independent of database availability.
+
+## Prisma
+
+After changing `prisma/schema.prisma`, create a local development migration with:
+
+```powershell
+pnpm --filter @anan/api exec prisma migrate dev --name describe_change
+```
+
+Review generated SQL before committing migrations. Never commit local database contents or real environment secrets.

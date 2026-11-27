@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import * as Joi from "joi";
+import { PrismaModule } from "./database/prisma.module";
 import { HealthModule } from "./modules/health/health.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { SellersModule } from "./modules/sellers/sellers.module";
@@ -19,6 +20,7 @@ import { CatalogModule } from "./modules/catalog/catalog.module";
         ),
       }),
     }),
+    PrismaModule,
     HealthModule,
     CustomersModule,
     SellersModule,
