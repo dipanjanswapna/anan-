@@ -16,6 +16,12 @@ Mobile-first multi-vendor e-commerce platform for Bangladesh.
 - `infra` — infrastructure as code
 - `docs` — architecture and runbooks
 
+## Seller application workflow
+
+Customers can visit http://localhost:3000/sell to submit a seller application. The Next.js route proxies the request to `POST /api/v1/seller-applications`; NestJS validates the contact and business fields and stores a pending application in PostgreSQL. Duplicate email addresses or phone numbers are rejected. Applications do not create login accounts, grant seller access, or approve a store.
+
+Before public launch, add request rate limiting, abuse protection, verified email/mobile OTP, and authenticated Admin review/approval. Do not treat an application as NID verification or permission to list products.
+
 ## Run the complete local stack with Docker
 
 With Docker Desktop running, start PostgreSQL, the API, and the storefront together:
