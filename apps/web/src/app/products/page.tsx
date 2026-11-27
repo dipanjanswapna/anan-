@@ -11,7 +11,7 @@ type CatalogProduct = {
 type CatalogResponse = { items: CatalogProduct[]; pagination: { page: number; limit: number; total: number; totalPages: number } };
 type Category = { id: string; nameEn: string; slug: string; productCount: number };
 const apiUrl = (process.env.ANAN_API_URL ?? "http://localhost:4000/api/v1").replace(/\/$/, "");
-const taka = (paisa: string) => new Intl.NumberFormat("en-BD", { maximumFractionDigits: 0 }).format(Number(paisa) / 100);
+const taka = (paisa: string) => { const amount = BigInt(paisa); const whole = new Intl.NumberFormat("en-BD").format(amount / 100n); const fraction = (amount % 100n).toString().padStart(2, "0").replace(/0+$/, ""); return fraction ? `${whole}.${fraction}` : whole; };
 
 async function getCatalog(search: string, category: string) {
   try {
