@@ -65,7 +65,7 @@ export class AuthService {
       where: { OR: [{ email: identifier.toLowerCase() }, { phone: identifier }] },
       select: { id: true, role: true, displayName: true, email: true, phone: true, passwordHash: true, isActive: true },
     });
-    if (!user || !user.passwordHash || !user.isActive || !(await bcrypt.compare(dto.password, user.passwordHash))) {
+    if (!user || user.role !== UserRole.CUSTOMER || !user.passwordHash || !user.isActive || !(await bcrypt.compare(dto.password, user.passwordHash))) {
       throw new UnauthorizedException("Invalid email/phone or password");
     }
     return this.issueSession(user);
@@ -77,7 +77,7 @@ export class AuthService {
     const now = new Date();
     const nextSecret = randomBytes(48).toString("base64url");
     const days = this.config.get<number>("AUTH_REFRESH_TTL_DAYS", 30);
-    const user = await this.prisma.$transaction(async (tx) => {
+    const { user, nextSessionId } = await this.prisma.$transaction(async (tx) => {
       const session = await tx.authSession.findFirst({
         where: { id: sessionId, tokenHash: hashToken(secret), revokedAt: null, expiresAt: { gt: now } },
         select: { userId: true },
@@ -89,24 +89,20 @@ export class AuthService {
       });
       if (changed.count !== 1) throw new UnauthorizedException("Refresh session already used");
       const account = await tx.user.findFirst({
-        where: { id: session.userId, isActive: true },
+        where: { id: session.userId, isActive: true, role: UserRole.CUSTOMER },
         select: { id: true, role: true, displayName: true, email: true, phone: true },
       });
       if (!account) throw new UnauthorizedException("Account is unavailable");
+      const newId = randomBytes(18).toString("hex");
       await tx.authSession.create({
-        data: { id: randomBytes(18).toString("hex"), userId: account.id, tokenHash: hashToken(nextSecret), expiresAt: new Date(now.getTime() + days * 86400000) },
+        data: { id: newId, userId: account.id, tokenHash: hashToken(nextSecret), expiresAt: new Date(now.getTime() + days * 86400000) },
       });
-      return account;
+      return { user: account, nextSessionId: newId };
     });
     const accessToken = await this.jwt.signAsync({ sub: user.id, role: user.role });
-    const nextSession = await this.prisma.authSession.findFirst({
-      where: { userId: user.id, tokenHash: hashToken(nextSecret), revokedAt: null },
-      select: { id: true },
-    });
-    if (!nextSession) throw new UnauthorizedException("Could not rotate session");
     return {
       accessToken,
-      refreshToken: `${nextSession.id}.${nextSecret}`,
+      refreshToken: `${nextSessionId}.${nextSecret}`,
       tokenType: "Bearer",
       expiresIn: this.config.get<string>("JWT_ACCESS_TTL", "15m"),
       user: { id: user.id, displayName: user.displayName, email: user.email, phone: user.phone, role: user.role },
