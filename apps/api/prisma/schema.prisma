@@ -41,6 +41,7 @@ model User {
   emailVerifiedAt DateTime?
   phoneVerifiedAt DateTime?
   sellerProfile SellerProfile?
+  authSessions  AuthSession[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
