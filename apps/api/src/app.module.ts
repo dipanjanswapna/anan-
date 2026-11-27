@@ -6,6 +6,7 @@ import { HealthModule } from "./modules/health/health.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { SellersModule } from "./modules/sellers/sellers.module";
 import { CatalogModule } from "./modules/catalog/catalog.module";
+import { AuthModule } from "./modules/auth/auth.module";
 
 @Module({
   imports: [
@@ -18,6 +19,13 @@ import { CatalogModule } from "./modules/catalog/catalog.module";
         DATABASE_URL: Joi.string().uri({ scheme: ["postgres", "postgresql"] }).default(
           "postgresql://anan:anan_local_dev@localhost:5432/anan_dev?schema=public",
         ),
+        OTP_HASH_SECRET: Joi.string().min(32).when("NODE_ENV", {
+          is: "production",
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        OTP_DELIVERY_URL: Joi.string().uri().optional(),
+        OTP_DELIVERY_TOKEN: Joi.string().optional(),
       }),
     }),
     PrismaModule,
@@ -25,6 +33,7 @@ import { CatalogModule } from "./modules/catalog/catalog.module";
     CustomersModule,
     SellersModule,
     CatalogModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
