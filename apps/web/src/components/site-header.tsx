@@ -37,6 +37,7 @@ export function SiteHeader() {
               </form>
             </div>
             <div className="ml-auto flex items-center gap-1 sm:gap-3">
+              <Link href="/sell" className="hidden rounded-xl bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 transition hover:bg-brand-100 sm:inline-flex">Sell on ANAN</Link>
               <button className="hidden items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-[#f8f5fc] sm:flex">
                 <MapPin size={19} className="text-brand-600"/>
                 <span><span className="block text-[10px] text-[#958ba2]">Deliver to</span><span className="flex items-center gap-1 text-xs font-semibold">Dhaka <ChevronDown size={12}/></span></span>
@@ -52,7 +53,7 @@ export function SiteHeader() {
             <Link href="/deals" className="ml-auto hidden shrink-0 rounded-full bg-[#fff3e8] px-3 py-1.5 text-[11px] font-bold text-[#bd6424] lg:block">✦ Today’s deals</Link>
           </div>
         </div>
-        {menuOpen && <div className="absolute inset-x-0 top-full border-b border-[#eeeaf5] bg-white p-4 shadow-soft lg:hidden"><div className="container-shell grid grid-cols-2 gap-2">{navItems.map(item => <Link onClick={() => setMenuOpen(false)} key={item} href="/categories" className="rounded-xl bg-[#faf8fd] px-4 py-3 text-sm font-semibold text-[#49375f]">{item}</Link>)}</div></div>}
+        {menuOpen && <div className="absolute inset-x-0 top-full border-b border-[#eeeaf5] bg-white p-4 shadow-soft lg:hidden"><div className="container-shell grid grid-cols-2 gap-2">{navItems.map(item => <Link onClick={() => setMenuOpen(false)} key={item} href="/categories" className="rounded-xl bg-[#faf8fd] px-4 py-3 text-sm font-semibold text-[#49375f]">{item}</Link>)}<Link onClick={() => setMenuOpen(false)} href="/sell" className="rounded-xl bg-brand-50 px-4 py-3 text-sm font-bold text-brand-700">Sell on ANAN</Link></div></div>}
       </header>
       <div className="container-shell py-3 lg:hidden">
         <form action="/products" className="flex h-11 items-center gap-3 rounded-xl border border-[#e9e3f2] bg-[#faf9fc] px-4 focus-within:border-brand-400">
