@@ -26,9 +26,25 @@ API liveness: `GET http://localhost:4000/api/v1/health`
 
 Database readiness: `GET http://localhost:4000/api/v1/health/ready`
 
-Readiness returns HTTP 503 when PostgreSQL cannot be reached. The liveness endpoint intentionally remains independent of database availability.
+## Public catalog
 
-## Prisma
+- `GET /api/v1/catalog/categories` — active categories with counts of approved products from approved sellers.
+- `GET /api/v1/catalog/products` — paginated approved products.
+- Optional product query parameters: `search`, `category` (category slug), `page`, and `limit` (1–48).
+- Search matches English and Bangla product names and descriptions.
+- Monetary values are returned as paisa strings to preserve BigInt precision.
+
+Only products with `APPROVED` status from `APPROVED` sellers and active categories are public.
+
+## Seed the category directory
+
+```powershell
+pnpm --filter @anan/api prisma:seed
+```
+
+The seed is safe to run repeatedly; it upserts the six ANAN launch categories without creating sellers or fake products.
+
+## Prisma migrations
 
 After changing `prisma/schema.prisma`, create a local development migration with:
 
