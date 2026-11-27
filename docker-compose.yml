@@ -29,6 +29,7 @@ services:
       PORT: 4000
       CORS_ORIGINS: http://localhost:3000
       DATABASE_URL: postgresql://anan:anan_local_dev@postgres:5432/anan_dev?schema=public
+      OTP_HASH_SECRET: anan-local-only-otp-hash-secret-change-before-use
     ports:
       - "4000:4000"
     depends_on:
