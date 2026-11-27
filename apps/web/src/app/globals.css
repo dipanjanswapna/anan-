@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; --brand: #7434df; --ink: #201936; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: #fff; color: var(--ink); font-family: var(--font-inter), var(--font-bengali), sans-serif; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+::selection { background: #e9ddff; color: #431e7c; }
+.container-shell { width: min(1240px, calc(100% - 40px)); margin-inline: auto; }
+.soft-scrollbar { scrollbar-width: none; }
+.soft-scrollbar::-webkit-scrollbar { display: none; }
+.product-image { transition: transform .45s cubic-bezier(.2,.7,.2,1); }
+.product-card:hover .product-image { transform: scale(1.055); }
+@media (max-width: 640px) { .container-shell { width: min(100% - 28px, 1240px); } }
