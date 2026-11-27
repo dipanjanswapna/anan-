@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../database/prisma.service";
 import { CatalogQueryDto } from "./dto/catalog-query.dto";
 
@@ -28,6 +28,75 @@ export class CatalogService {
       ...category,
       productCount: countByCategory.get(category.id) ?? 0,
     }));
+  }
+
+  async getProductBySlug(slug: string) {
+    const product = await this.prisma.product.findFirst({
+      where: {
+        slug,
+        status: "APPROVED",
+        seller: { status: "APPROVED" },
+        category: { isActive: true },
+      },
+      select: {
+        id: true,
+        nameEn: true,
+        nameBn: true,
+        slug: true,
+        descriptionEn: true,
+        descriptionBn: true,
+        pricePaisa: true,
+        compareAtPricePaisa: true,
+        stockOnHand: true,
+        createdAt: true,
+        category: { select: { nameEn: true, nameBn: true, slug: true } },
+        seller: { select: { storeName: true, storeSlug: true } },
+      },
+    });
+    if (!product) throw new NotFoundException("Product not found");
+    return {
+      ...product,
+      pricePaisa: product.pricePaisa.toString(),
+      compareAtPricePaisa: product.compareAtPricePaisa?.toString() ?? null,
+    };
+  }
+
+  async getStorefront(storeSlug: string, query: CatalogQueryDto) {
+    const seller = await this.prisma.sellerProfile.findFirst({
+      where: { storeSlug, status: "APPROVED" },
+      select: {
+        storeName: true,
+        storeSlug: true,
+        createdAt: true,
+        products: {
+          where: { status: "APPROVED", category: { isActive: true } },
+          orderBy: { createdAt: "desc" },
+          skip: ((query.page ?? 1) - 1) * (query.limit ?? 12),
+          take: query.limit ?? 12,
+          select: {
+            id: true, nameEn: true, nameBn: true, slug: true,
+            pricePaisa: true, compareAtPricePaisa: true, stockOnHand: true,
+            category: { select: { nameEn: true, slug: true } },
+          },
+        },
+        _count: { select: { products: { where: { status: "APPROVED", category: { isActive: true } } } } },
+      },
+    });
+    if (!seller) throw new NotFoundException("Store not found");
+    return {
+      store: { storeName: seller.storeName, storeSlug: seller.storeSlug, joinedAt: seller.createdAt },
+      products: seller.products.map((product) => ({
+        ...product,
+        pricePaisa: product.pricePaisa.toString(),
+        compareAtPricePaisa: product.compareAtPricePaisa?.toString() ?? null,
+      })),
+      pagination: {
+        page: query.page ?? 1,
+        limit: query.limit ?? 12,
+        total: seller._count.products,
+        totalPages: Math.ceil(seller._count.products / (query.limit ?? 12)),
+      },
+    };
   }
 
   async getProducts(query: CatalogQueryDto) {
