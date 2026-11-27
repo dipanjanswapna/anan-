@@ -34,3 +34,7 @@ jobs:
         run: pnpm --filter @anan/web typecheck
       - name: Build storefront
         run: pnpm --filter @anan/web build
+      - name: Validate Docker Compose configuration
+        run: docker compose config --quiet
+      - name: Build development container image
+        run: docker build -f Dockerfile.dev -t anan-dev:ci .
