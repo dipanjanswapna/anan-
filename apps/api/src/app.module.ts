@@ -16,7 +16,7 @@ import { AuthModule } from "./modules/auth/auth.module";
         NODE_ENV: Joi.string().valid("development", "test", "production").default("development"),
         PORT: Joi.number().port().default(4000),
         CORS_ORIGINS: Joi.string().default("http://localhost:3000"),
-        JWT_ACCESS_SECRET: Joi.string().min(32).default("anan-local-development-secret-change-before-production"),
+        JWT_ACCESS_SECRET: Joi.when("NODE_ENV", { is: "production", then: Joi.string().min(32).required(), otherwise: Joi.string().min(32).default("anan-local-development-secret-change-before-production") }),
         JWT_ACCESS_TTL: Joi.string().default("15m"),
         AUTH_REFRESH_TTL_DAYS: Joi.number().integer().min(1).max(90).default(30),
         DATABASE_URL: Joi.string().uri({ scheme: ["postgres", "postgresql"] }).default(
