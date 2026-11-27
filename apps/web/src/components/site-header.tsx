@@ -30,11 +30,11 @@ export function SiteHeader() {
               <span className="text-[25px] font-extrabold tracking-[-1.5px] text-[#24143f]">anan<span className="text-brand-600">.</span></span>
             </Link>
             <div className="hidden min-w-0 flex-1 lg:block">
-              <label className="flex h-11 items-center gap-3 rounded-xl border border-[#e9e3f2] bg-[#faf9fc] px-4 transition focus-within:border-brand-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-100">
+              <form action="/products" className="flex h-11 items-center gap-3 rounded-xl border border-[#e9e3f2] bg-[#faf9fc] px-4 transition focus-within:border-brand-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-100">
                 <Search size={18} className="shrink-0 text-[#8d819f]"/>
-                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search for products, brands and more..." className="w-full bg-transparent text-sm text-[#302344] outline-none placeholder:text-[#a69db2]" />
-                <kbd className="hidden rounded-md border border-[#e7e1ee] bg-white px-2 py-1 text-[10px] text-[#9b91a8] xl:block">ENTER</kbd>
-              </label>
+                <input name="q" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search for products, brands and more..." className="w-full bg-transparent text-sm text-[#302344] outline-none placeholder:text-[#a69db2]" />
+                <button type="submit" aria-label="Search products"><kbd className="hidden rounded-md border border-[#e7e1ee] bg-white px-2 py-1 text-[10px] text-[#9b91a8] xl:block">ENTER</kbd></button>
+              </form>
             </div>
             <div className="ml-auto flex items-center gap-1 sm:gap-3">
               <button className="hidden items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-[#f8f5fc] sm:flex">
@@ -55,10 +55,10 @@ export function SiteHeader() {
         {menuOpen && <div className="absolute inset-x-0 top-full border-b border-[#eeeaf5] bg-white p-4 shadow-soft lg:hidden"><div className="container-shell grid grid-cols-2 gap-2">{navItems.map(item => <Link onClick={() => setMenuOpen(false)} key={item} href="/categories" className="rounded-xl bg-[#faf8fd] px-4 py-3 text-sm font-semibold text-[#49375f]">{item}</Link>)}</div></div>}
       </header>
       <div className="container-shell py-3 lg:hidden">
-        <label className="flex h-11 items-center gap-3 rounded-xl border border-[#e9e3f2] bg-[#faf9fc] px-4 focus-within:border-brand-400">
+        <form action="/products" className="flex h-11 items-center gap-3 rounded-xl border border-[#e9e3f2] bg-[#faf9fc] px-4 focus-within:border-brand-400">
           <Search size={18} className="text-[#8d819f]"/>
-          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search products and brands..." className="w-full bg-transparent text-sm outline-none placeholder:text-[#a69db2]"/>
-        </label>
+          <input name="q" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search products and brands..." className="w-full bg-transparent text-sm outline-none placeholder:text-[#a69db2]"/>
+        </form>
       </div>
     </>
   );
