@@ -30,6 +30,8 @@ Database readiness: `GET http://localhost:4000/api/v1/health/ready`
 
 - `GET /api/v1/catalog/categories` — active categories with counts of approved products from approved sellers.
 - `GET /api/v1/catalog/products` — paginated approved products.
+- `GET /api/v1/catalog/products/:slug` — approved product detail.
+- `GET /api/v1/catalog/stores/:storeSlug` — approved seller storefront and its approved products.
 - Optional product query parameters: `search`, `category` (category slug), `page`, and `limit` (1–48).
 - Search matches English and Bangla product names and descriptions.
 - Monetary values are returned as paisa strings to preserve BigInt precision.
