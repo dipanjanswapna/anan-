@@ -34,12 +34,14 @@ model User {
   id            String         @id @default(cuid())
   email         String?        @unique
   phone         String?        @unique
+  displayName   String?
   passwordHash  String?
   role          UserRole       @default(CUSTOMER)
   isActive      Boolean        @default(true)
   emailVerifiedAt DateTime?
   phoneVerifiedAt DateTime?
   sellerProfile SellerProfile?
+  authSessions  AuthSession[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -97,4 +99,19 @@ model Product {
 
   @@index([sellerId, status, createdAt])
   @@index([categoryId, status])
+}
+
+model AuthSession {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  userAgent  String?
+  ipAddress  String?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([userId, revokedAt, expiresAt])
 }

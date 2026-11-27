@@ -2,6 +2,7 @@ import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 
 async function bootstrap(): Promise<void> {
@@ -9,6 +10,7 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
 
   app.use(helmet());
+  app.use(cookieParser());
   app.setGlobalPrefix("api/v1");
   app.enableCors({
     origin: config.get<string>("CORS_ORIGINS", "http://localhost:3000").split(",").map((value) => value.trim()),

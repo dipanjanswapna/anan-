@@ -42,7 +42,7 @@ export function SiteHeader() {
                 <span><span className="block text-[10px] text-[#958ba2]">Deliver to</span><span className="flex items-center gap-1 text-xs font-semibold">Dhaka <ChevronDown size={12}/></span></span>
               </button>
               <button aria-label="Wishlist" className="hidden rounded-xl p-2.5 text-[#49375f] hover:bg-[#f5f0ff] sm:block"><Heart size={20}/></button>
-              <button aria-label="Account" className="rounded-xl p-2.5 text-[#49375f] hover:bg-[#f5f0ff]"><UserRound size={20}/></button>
+              <Link href="/account" aria-label="Account" className="rounded-xl p-2.5 text-[#49375f] hover:bg-[#f5f0ff]"><UserRound size={20}/></Link>
               <button aria-label="Shopping bag" className="relative rounded-xl p-2.5 text-[#49375f] hover:bg-[#f5f0ff]"><ShoppingBag size={21}/><span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-brand-600 text-[9px] font-bold text-white">0</span></button>
             </div>
           </div>
