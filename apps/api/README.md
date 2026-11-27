@@ -55,3 +55,9 @@ pnpm --filter @anan/api exec prisma migrate dev --name describe_change
 ```
 
 Review generated SQL before committing migrations. Never commit local database contents or real environment secrets.
+
+## Full-stack Docker development
+
+From the repository root, run `docker compose up --build -d`. Compose waits for PostgreSQL, applies the Prisma schema to the disposable local database, seeds the six categories, and starts the API. The API is available at http://localhost:4000.
+
+This automated `prisma db push` is strictly for local development. Use reviewed Prisma migrations in staging and production.
