@@ -22,6 +22,13 @@ enum SellerStatus {
   SUSPENDED
 }
 
+enum SellerApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
 enum ProductStatus {
   DRAFT
   PENDING_APPROVAL
@@ -31,32 +38,48 @@ enum ProductStatus {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String?        @unique
-  phone         String?        @unique
-  passwordHash  String?
-  role          UserRole       @default(CUSTOMER)
-  isActive      Boolean        @default(true)
+  id              String         @id @default(cuid())
+  email           String?        @unique
+  phone           String?        @unique
+  passwordHash    String?
+  role            UserRole       @default(CUSTOMER)
+  isActive        Boolean        @default(true)
   emailVerifiedAt DateTime?
   phoneVerifiedAt DateTime?
-  sellerProfile SellerProfile?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  sellerProfile   SellerProfile?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([role, isActive])
 }
 
 model SellerProfile {
-  id             String       @id @default(cuid())
-  userId         String       @unique
-  storeName      String
-  storeSlug      String       @unique
-  status         SellerStatus @default(PENDING)
+  id                String       @id @default(cuid())
+  userId            String       @unique
+  storeName         String
+  storeSlug         String       @unique
+  status            SellerStatus @default(PENDING)
   verificationNotes String?
-  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
-  products       Product[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  user              User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  products          Product[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model SellerApplication {
+  id           String                  @id @default(cuid())
+  contactName  String
+  email        String                  @unique
+  phone        String                  @unique
+  storeName    String
+  storeSlug    String                  @unique
+  businessType String
+  message      String?
+  status       SellerApplicationStatus @default(PENDING)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
 
   @@index([status, createdAt])
 }
