@@ -1,11 +1,12 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
-  TooManyRequestsException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { OtpPurpose, Prisma } from "@prisma/client";
+import { OtpPurpose } from "@prisma/client";
 import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { PrismaService } from "../../database/prisma.service";
 import { OtpDeliveryService } from "./otp-delivery.service";
@@ -45,10 +46,10 @@ export class OtpService {
     });
 
     if (lastRequest && now.getTime() - lastRequest.createdAt.getTime() < OTP_COOLDOWN_MS) {
-      throw new TooManyRequestsException("Please wait before requesting another code.");
+      throw new HttpException("Please wait before requesting another code.", HttpStatus.TOO_MANY_REQUESTS);
     }
     if (recentCount >= OTP_MAX_REQUESTS) {
-      throw new TooManyRequestsException("Too many verification requests. Try again in 15 minutes.");
+      throw new HttpException("Too many verification requests. Try again in 15 minutes.", HttpStatus.TOO_MANY_REQUESTS);
     }
 
     const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
