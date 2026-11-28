@@ -59,13 +59,27 @@ export class AdminSellerApplicationsService {
           throw new ConflictException("The application phone and email belong to different accounts. Manual identity review is required.");
         }
         const existing = byPhone ?? byEmail;
-        if (existing && (existing.role !== "SELLER" || existing.sellerProfile)) {
+        if (existing && (
+          existing.role !== "SELLER" || existing.sellerProfile ||
+          (existing.email !== null && existing.email !== application.email) ||
+          (existing.phone !== null && existing.phone !== application.phone)
+        )) {
           throw new ConflictException("An account already uses this phone or email. Resolve identity linking manually before approval.");
         }
-        const sellerUser = existing ?? await tx.user.create({
-          data: { name: application.contactName, email: application.email, phone: application.phone, role: "SELLER", isActive: true },
-          select: { id: true },
-        });
+        const sellerUser = existing
+          ? await tx.user.update({
+              where: { id: existing.id },
+              data: {
+                name: existing.name ?? application.contactName,
+                email: existing.email ?? application.email,
+                phone: existing.phone ?? application.phone,
+              },
+              select: { id: true },
+            })
+          : await tx.user.create({
+              data: { name: application.contactName, email: application.email, phone: application.phone, role: "SELLER", isActive: true },
+              select: { id: true },
+            });
         provisionedUserId = sellerUser.id;
         await tx.sellerProfile.create({
           data: { userId: sellerUser.id, storeName: application.storeName, storeSlug: application.storeSlug, status: "APPROVED" },
