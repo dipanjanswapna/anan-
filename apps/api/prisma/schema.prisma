@@ -258,6 +258,7 @@ model Order {
   user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   sellerOrders      SellerOrder[]
   items             OrderItem[]
+  events            OrderEvent[]
 
   @@unique([userId, idempotencyKey])
   @@index([userId, createdAt])
@@ -299,4 +300,20 @@ model OrderItem {
   @@index([orderId])
   @@index([sellerOrderId])
   @@index([productId])
+}
+
+
+model OrderEvent {
+  id          String   @id @default(cuid())
+  orderId     String
+  actorUserId String?
+  actorRole   String
+  eventType   String
+  note        String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+  @@index([actorUserId, createdAt])
 }

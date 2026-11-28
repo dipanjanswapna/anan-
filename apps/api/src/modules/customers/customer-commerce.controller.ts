@@ -10,6 +10,9 @@ export class CustomerCommerceController {
   @Post("checkout")
   checkout(@Headers("authorization") authorization: string | undefined, @Body() input: CheckoutDto) { return this.commerce.checkout(authorization, input); }
 
+  @Post("orders/:id/cancel")
+  cancelOrder(@Headers("authorization") authorization: string | undefined, @Param("id") id: string) { return this.commerce.cancelOrder(authorization, id); }
+
   @Get("orders")
   listOrders(@Headers("authorization") authorization?: string) { return this.commerce.listOrders(authorization); }
 

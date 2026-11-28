@@ -242,6 +242,50 @@ export class CustomerCommerceService {
     };
   }
 
+
+  async cancelOrder(authorization: string | undefined, id: string) {
+    const userId = await this.customerId(authorization);
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({
+        where: { id, userId },
+        include: { sellerOrders: { include: { items: true } } },
+      });
+      if (!order) throw new NotFoundException("Order not found.");
+      if (order.status === "CANCELLED") return { cancelled: true, replayed: true, message: "This order was already cancelled." };
+      if (order.status !== "PENDING_SELLER_ACCEPTANCE" || order.sellerOrders.some((item) => item.status !== "PENDING_ACCEPTANCE")) {
+        throw new BadRequestException("This order can no longer be cancelled online. Please contact customer support.");
+      }
+
+      for (const sellerOrder of order.sellerOrders) {
+        for (const item of sellerOrder.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stockOnHand: { increment: item.quantity } },
+          });
+        }
+      }
+      await tx.sellerOrder.updateMany({
+        where: { orderId: order.id, status: "PENDING_ACCEPTANCE" },
+        data: { status: "CANCELLED" },
+      });
+      await tx.order.update({
+        where: { id: order.id },
+        data: { status: "CANCELLED" },
+      });
+      await tx.orderEvent.create({
+        data: {
+          orderId: order.id,
+          actorUserId: userId,
+          actorRole: "CUSTOMER",
+          eventType: "CUSTOMER_CANCELLED",
+          note: "Customer cancelled before seller acceptance.",
+          metadata: { restoredStockLines: order.sellerOrders.reduce((n, sellerOrder) => n + sellerOrder.items.length, 0) },
+        },
+      });
+      return { cancelled: true, replayed: false, message: "Order cancelled and reserved stock restored." };
+    }, { isolationLevel: "Serializable" });
+  }
+
   async listOrders(authorization?: string) {
     const userId = await this.customerId(authorization);
     const orders = await this.prisma.order.findMany({
