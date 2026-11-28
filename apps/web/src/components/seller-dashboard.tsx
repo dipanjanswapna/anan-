@@ -10,7 +10,7 @@ type SellerOrder = {
   items: Array<{ id: string; productNameEn: string; quantity: number; lineTotalPaisa: string }>;
 };
 type Payload = { seller: { storeName: string; storeSlug: string }; stats: { pending: number; active: number; completed: number }; orders: SellerOrder[] };
-const money=(value:string)=>`৳${(Number(value)/100).toLocaleString("en-BD",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+const money=(value:string)=>{const paisa=BigInt(value);const whole=new Intl.NumberFormat("en-BD").format(paisa/100n);const fraction=(paisa%100n).toString().padStart(2,"0");return `৳${whole}.${fraction}`;};
 
 export function SellerDashboard() {
   const [data,setData]=useState<Payload|null>(null);
