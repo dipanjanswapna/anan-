@@ -8,6 +8,21 @@ import { CheckoutDto } from "./dto/checkout.dto";
 export class CustomerCommerceService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private imageUrl(storageKey: string) {
+    const bucket = process.env.AWS_S3_BUCKET;
+    const region = process.env.AWS_REGION;
+    const base = (
+      process.env.MEDIA_PUBLIC_BASE_URL ||
+      (bucket && region ? `https://${bucket}.s3.${region}.amazonaws.com` : "")
+    ).replace(/\/$/, "");
+    return base ? `${base}/${storageKey.split("/").map(encodeURIComponent).join("/")}` : null;
+  }
+
+  private primaryImage(images: Array<{ storageKey: string; altText: string }>) {
+    const image = images[0];
+    return image ? { url: this.imageUrl(image.storageKey), altText: image.altText } : null;
+  }
+
   private async customerId(authorization?: string): Promise<string> {
     const match = authorization?.match(/^Bearer\s+([A-Za-z0-9_-]{40,})$/i);
     if (!match) throw new UnauthorizedException("A valid customer session is required.");
@@ -34,11 +49,11 @@ export class CustomerCommerceService {
     const userId = await this.customerId(authorization);
     const items = await this.prisma.cartItem.findMany({
       where: { userId }, orderBy: { updatedAt: "desc" },
-      include: { product: { select: { id: true, nameEn: true, nameBn: true, slug: true, pricePaisa: true, stockOnHand: true, status: true, seller: { select: { status: true, storeName: true, storeSlug: true } }, category: { select: { isActive: true } } } } },
+      include: { product: { select: { id: true, nameEn: true, nameBn: true, slug: true, pricePaisa: true, compareAtPricePaisa: true, stockOnHand: true, status: true, seller: { select: { status: true, storeName: true, storeSlug: true } }, category: { select: { isActive: true } }, images: { where: { status: "APPROVED" }, orderBy: { sortOrder: "asc" }, take: 1, select: { storageKey: true, altText: true } } } } },
     });
     const available = items.filter((item) => item.product.status === "APPROVED" && item.product.seller.status === "APPROVED" && item.product.category.isActive);
     const subtotalPaisa = available.reduce((sum, item) => sum + item.product.pricePaisa * BigInt(item.quantity), 0n);
-    return { items: available.map(({ product, ...item }) => ({ ...item, product: { id: product.id, nameEn: product.nameEn, nameBn: product.nameBn, slug: product.slug, pricePaisa: product.pricePaisa.toString(), stockOnHand: product.stockOnHand, seller: { storeName: product.seller.storeName, storeSlug: product.seller.storeSlug } }, available: product.stockOnHand >= item.quantity, maxQuantity: product.stockOnHand })), subtotalPaisa: subtotalPaisa.toString(), itemCount: available.reduce((sum, item) => sum + item.quantity, 0) };
+    return { items: available.map(({ product, ...item }) => ({ ...item, product: { id: product.id, nameEn: product.nameEn, nameBn: product.nameBn, slug: product.slug, pricePaisa: product.pricePaisa.toString(), compareAtPricePaisa: product.compareAtPricePaisa?.toString() ?? null, stockOnHand: product.stockOnHand, image: this.primaryImage(product.images), seller: { storeName: product.seller.storeName, storeSlug: product.seller.storeSlug } }, available: product.stockOnHand >= item.quantity, maxQuantity: product.stockOnHand })), subtotalPaisa: subtotalPaisa.toString(), itemCount: available.reduce((sum, item) => sum + item.quantity, 0) };
   }
 
   async addCartItem(authorization: string | undefined, productId: string, input: CartItemDto) {
@@ -88,9 +103,9 @@ export class CustomerCommerceService {
     const items = await this.prisma.wishlistItem.findMany({
       where: { userId, product: { status: "APPROVED", seller: { status: "APPROVED" }, category: { isActive: true } } },
       orderBy: { createdAt: "desc" },
-      include: { product: { select: { id: true, nameEn: true, nameBn: true, slug: true, pricePaisa: true, stockOnHand: true, seller: { select: { storeName: true, storeSlug: true } } } } },
+      include: { product: { select: { id: true, nameEn: true, nameBn: true, slug: true, pricePaisa: true, compareAtPricePaisa: true, stockOnHand: true, seller: { select: { storeName: true, storeSlug: true } }, images: { where: { status: "APPROVED" }, orderBy: { sortOrder: "asc" }, take: 1, select: { storageKey: true, altText: true } } } } },
     });
-    return { items: items.map(({ product, ...item }) => ({ ...item, product: { ...product, pricePaisa: product.pricePaisa.toString() } })) };
+    return { items: items.map(({ product, ...item }) => ({ ...item, product: { id: product.id, nameEn: product.nameEn, nameBn: product.nameBn, slug: product.slug, pricePaisa: product.pricePaisa.toString(), compareAtPricePaisa: product.compareAtPricePaisa?.toString() ?? null, stockOnHand: product.stockOnHand, image: this.primaryImage(product.images), seller: { storeName: product.seller.storeName, storeSlug: product.seller.storeSlug } } })) };
   }
 
   async addWishlistItem(authorization: string | undefined, productId: string) {

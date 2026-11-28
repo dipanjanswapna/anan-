@@ -44,9 +44,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className={`${inter.variable} ${bengali.variable}`}>
+        <a href="#content" className="skip-link">Skip to main content</a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationStructuredData) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteStructuredData) }} />
-        {children}
+        <div id="content">{children}</div>
       </body>
     </html>
   );

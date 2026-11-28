@@ -6,7 +6,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: #fff; color: var(--ink); font-family: var(--font-inter), var(--font-bengali), sans-serif; -webkit-font-smoothing: antialiased; }
-button, input { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 ::selection { background: #e9ddff; color: #431e7c; }
 .container-shell { width: min(1240px, calc(100% - 40px)); margin-inline: auto; }
@@ -14,4 +14,57 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .soft-scrollbar::-webkit-scrollbar { display: none; }
 .product-image { transition: transform .45s cubic-bezier(.2,.7,.2,1); }
 .product-card:hover .product-image { transform: scale(1.055); }
+
+/* Keyboard focus is always visible, but never shown for pointer clicks. */
+:where(a, button, summary, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #a47aff;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -80px;
+  z-index: 100;
+  border-radius: 12px;
+  background: #431e7c;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: top .2s ease;
+}
+.skip-link:focus { top: 12px; }
+details > summary { cursor: pointer; list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+.field-label { display: block; font-size: 11px; font-weight: 700; color: #5e526d; }
+.field-input { margin-top: 6px; width: 100%; border-radius: 12px; border: 1px solid #e8e1f0; background: #fff; padding: 10px 12px; font-size: 14px; color: #302344; outline: none; }
+.field-input:focus { border-color: #a47aff; box-shadow: 0 0 0 4px #f0e7ff; }
+.field-hint { margin-top: 5px; font-size: 11px; color: #a097ad; }
+.badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 4px 10px; font-size: 10px; font-weight: 700; }
+
 @media (max-width: 640px) { .container-shell { width: min(100% - 28px, 1240px); } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* Shared visual polish */
+body { overflow-x: clip; }
+#content { min-width: 0; }
+.card-lift { transition: transform .3s cubic-bezier(.2,.7,.2,1), box-shadow .3s ease, border-color .3s ease; }
+.card-lift:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -24px rgba(38, 20, 66, .4); }
+.status-dot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
+.skeleton { position: relative; overflow: hidden; background: #f4effa; }
+.skeleton::after {
+  content: ""; position: absolute; inset: 0; translate: -100% 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent);
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { to { translate: 100% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+  .card-lift:hover { transform: none; }
+}
+/* Keep sticky purchase bars clear of iOS home indicator */
+.safe-bottom { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
