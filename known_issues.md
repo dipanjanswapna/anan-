@@ -178,3 +178,16 @@ CI evidence: run 46144307456 succeeded for an earlier foundation commit only; it
 - **Impact:** The feature cannot safely be merged until its branch is synchronized and fresh CI plus migration review pass.
 - **Action:** Merge current `main` into the feature branch without discarding either side; run Prisma/API/Web/Compose CI; inspect migration baseline and add automated coverage; then merge only if GitHub reports mergeable and CI is green.
 - **State:** Open; branch synchronization and fresh validation pending.
+
+
+## Authoritative release-readiness audit (2026-11-28; supersedes older Social Studio branch-status notes)
+
+- **Current repository state:** PR #29 Social Studio and PR #32 Brand/UI refresh are merged to `main`. Main HEAD observed: `ebe7cbe28ec3a95e49e692f8ec22a2de711c77a7`.
+- **Main CI:** GitHub Actions run `46153315690` completed successfully. This validates schema/client generation, API compilation, storefront typecheck/build, Compose configuration and development image build; it is not an integration, migration, security or production deployment test.
+- **P0 — Prisma migration baseline is incomplete:** the first migration in `apps/api/prisma/migrations` is `20261128000000_customer_orders`. Its SQL creates order tables and adds foreign keys referencing `User`, `SellerProfile` and `Product`, but does not create those foundational tables. No earlier baseline migration is present in the checked-in migration directory. A fresh empty database is therefore not proven deployable with `prisma migrate deploy` and is expected to fail when the foreign keys are added. **Do not run production migration or claim launch readiness until this is fixed and tested.**
+- **Safe remediation required:** generate a complete baseline from the current Prisma schema for fresh databases, then document and test a separate adoption path for existing databases (schema comparison, backup, controlled `migrate resolve --applied` only after equivalence is proven). Never reset or mark migrations applied on a data-bearing DB without backup and review.
+- **P1 — Social media upload safety:** creator uploads are placed in S3 quarantine and validated by MIME/size plus HEAD metadata. Malware scanning, decode/re-encode, EXIF removal, video codec/duration checks, transcoding, approved-object promotion, private delivery verification, quotas and orphan cleanup remain unimplemented. Quarantine objects must remain private.
+- **P1 — Automated test coverage:** CI is build/typecheck/schema-focused; comprehensive unit/integration/E2E tests for authentication, checkout concurrency/idempotency, seller acceptance/expiry, Admin RBAC, returns and Social Studio abuse/visibility are not verified.
+- **P1 — Social Trust & Safety operations:** appeals, evidence retention, escalation workflow, staffed response/SLA and IP/device/anonymous abuse controls remain incomplete. 18+ publishing must remain disabled until genuine age assurance exists.
+- **Not verified:** production AWS configuration, production DB migration, browser QA after PR #29 merge, deployment, backups/restore, load testing and security review.
+
