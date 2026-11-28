@@ -335,6 +335,7 @@ export class CustomerCommerceService {
           include: {
             items: true,
             shipment: { include: { events: { orderBy: { occurredAt: "asc" } } } },
+            returnRequest: true,
           },
         },
       },
