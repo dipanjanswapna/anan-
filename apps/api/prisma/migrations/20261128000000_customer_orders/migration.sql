@@ -3,13 +3,6 @@ CREATE TYPE "SellerOrderStatus" AS ENUM ('PENDING_ACCEPTANCE', 'ACCEPTED', 'REJE
 CREATE TYPE "PaymentMethod" AS ENUM ('CASH_ON_DELIVERY');
 CREATE TYPE "PaymentStatus" AS ENUM ('UNPAID', 'PAID', 'REFUNDED');
 
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "unusedOrderRelationCompatibility" BOOLEAN;
-ALTER TABLE "SellerProfile" ADD COLUMN IF NOT EXISTS "unusedOrderRelationCompatibility" BOOLEAN;
-ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "unusedOrderRelationCompatibility" BOOLEAN;
-ALTER TABLE "User" DROP COLUMN IF EXISTS "unusedOrderRelationCompatibility";
-ALTER TABLE "SellerProfile" DROP COLUMN IF EXISTS "unusedOrderRelationCompatibility";
-ALTER TABLE "Product" DROP COLUMN IF EXISTS "unusedOrderRelationCompatibility";
-
 CREATE TABLE "Order" (
   "id" TEXT NOT NULL,
   "userId" TEXT NOT NULL,
