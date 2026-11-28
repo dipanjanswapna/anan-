@@ -430,6 +430,12 @@ model ReturnRequest {
   status         ReturnRequestStatus @default(REQUESTED)
   sellerNotes    String?
   reviewedAt     DateTime?
+  adminNotes     String?
+  adminReviewedAt DateTime?
+  adminReviewedByUserId String?
+  refundReference String?
+  refundMethod   String?
+  refundAmountPaisa BigInt?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   sellerOrder    SellerOrder         @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
