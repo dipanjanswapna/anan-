@@ -6,6 +6,13 @@ import { CatalogQueryDto } from "./dto/catalog-query.dto";
 export class CatalogService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private imageUrl(storageKey: string) {
+    const bucket = process.env.AWS_S3_BUCKET;
+    const region = process.env.AWS_REGION;
+    const base = (process.env.MEDIA_PUBLIC_BASE_URL || (bucket && region ? `https://${bucket}.s3.${region}.amazonaws.com` : "")).replace(/\/$/, "");
+    return base ? `${base}/${storageKey.split("/").map(encodeURIComponent).join("/")}` : null;
+  }
+
   async getCategories() {
     const categories = await this.prisma.category.findMany({
       where: { isActive: true },
@@ -51,6 +58,7 @@ export class CatalogService {
         createdAt: true,
         category: { select: { nameEn: true, nameBn: true, slug: true } },
         seller: { select: { storeName: true, storeSlug: true } },
+        images: { where: { status: "APPROVED" }, orderBy: { sortOrder: "asc" }, select: { storageKey: true, altText: true, isPrimary: true } },
       },
     });
     if (!product) throw new NotFoundException("Product not found");
@@ -58,6 +66,7 @@ export class CatalogService {
       ...product,
       pricePaisa: product.pricePaisa.toString(),
       compareAtPricePaisa: product.compareAtPricePaisa?.toString() ?? null,
+      images: product.images.map((image) => ({ ...image, url: this.imageUrl(image.storageKey) })),
     };
   }
 
@@ -77,6 +86,7 @@ export class CatalogService {
             id: true, nameEn: true, nameBn: true, slug: true,
             pricePaisa: true, compareAtPricePaisa: true, stockOnHand: true,
             category: { select: { nameEn: true, slug: true } },
+            images: { where: { status: "APPROVED" }, orderBy: { sortOrder: "asc" }, take: 1, select: { storageKey: true, altText: true } },
           },
         },
         _count: { select: { products: { where: { status: "APPROVED", category: { isActive: true } } } } },
@@ -89,6 +99,7 @@ export class CatalogService {
         ...product,
         pricePaisa: product.pricePaisa.toString(),
         compareAtPricePaisa: product.compareAtPricePaisa?.toString() ?? null,
+        images: product.images.map((image) => ({ ...image, url: this.imageUrl(image.storageKey) })),
       })),
       pagination: {
         page: query.page ?? 1,
@@ -140,6 +151,7 @@ export class CatalogService {
           createdAt: true,
           category: { select: { nameEn: true, nameBn: true, slug: true } },
           seller: { select: { storeName: true, storeSlug: true } },
+          images: { where: { status: "APPROVED" }, orderBy: { sortOrder: "asc" }, take: 1, select: { storageKey: true, altText: true } },
         },
       }),
       this.prisma.product.count({ where }),
@@ -150,6 +162,7 @@ export class CatalogService {
         ...item,
         pricePaisa: item.pricePaisa.toString(),
         compareAtPricePaisa: item.compareAtPricePaisa?.toString() ?? null,
+        images: item.images.map((image) => ({ ...image, url: this.imageUrl(image.storageKey) })),
       })),
       pagination: {
         page,
