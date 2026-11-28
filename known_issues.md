@@ -128,3 +128,11 @@
 
 ## Resolution policy
 Retain a short resolved entry with issue, former severity, PR/commit, tests/CI evidence and remaining operational action. Do not erase history without evidence.
+
+
+### P2 — Social Studio trust, safety and media pipeline incomplete
+- **Area:** Social Studio / user-generated content.
+- **Evidence:** Initial Creator Foundation is under development on `feat/social-studio-creator-foundation`; media is accepted as an HTTPS URL and post approval is a basic Admin review workflow.
+- **Impact:** This is not launch-ready UGC infrastructure. External media is not uploaded to controlled storage, decoded/re-encoded, malware scanned or checked for ownership/codec/duration. Age assurance, reporting, blocking/muting, appeals, evidence retention, escalation and staffed response are absent.
+- **Action:** Keep 18+ content disabled until genuine age assurance exists. Add controlled media upload/processing, user reporting and block/mute controls, moderation policy tooling, audit/evidence retention, escalation/SLA and operational staffing before public launch.
+- **State:** Open; initial foundation in progress, not merged or deployed.
