@@ -160,3 +160,13 @@ Retain a short resolved entry with issue, former severity, PR/commit, tests/CI e
 - **Impact:** This is not a platform-wide moderation ban. It does not stop the blocked creator from posting, contacting users outside this feature, or viewing public content while signed out/using another account. Appeals, evidence retention, rate limits and safety operations remain incomplete.
 - **Action:** Keep block semantics scoped and explicit; add integration tests, report escalation, abuse controls and staffed moderation before public launch.
 - **State:** Partial implementation on PR #29; CI pending.
+
+
+## Social Studio — current PR #29 handoff clarification (2026-11-28)
+The older Social Studio entries above describe earlier intermediate commits. Current observed branch HEAD is `c7ecca82b542cd9752db67190dcb5f1faa13e457` on `feat/social-studio-creator-foundation`; PR #29 remains open, not merged, and was observed as one commit behind main with `mergeable=false`. Re-check live state before acting.
+
+Implemented on branch (not main): creator profile/storefront; one-image-or-video posts; presigned S3 upload to quarantine with HEAD MIME/size verification; submit/admin review; post reports and creator block/unblock; report and comment moderation; follow/like/comment/save; in-app notifications; public + following cursor feeds; per-user fixed-minute DB rate limits; creator summary analytics. Admin approval fails closed while media URL remains under `social/quarantine/`.
+
+Open launch blockers: no malware scanning or media sanitization/re-encoding/EXIF removal; no video codec/duration inspection or transcoding; no quarantine-to-approved promotion or verified private media delivery; no IP/device/anonymous abuse controls; no appeal/evidence retention/escalation/staffed SLA; no genuine age assurance; no reach/impression tracking; no automated tests or verified latest-head CI; migrations have not been verified applied. The bucket/CDN must not expose quarantine objects publicly. Keep 18+ content disabled.
+
+CI evidence: run 46144307456 succeeded for an earlier foundation commit only; it is not evidence for current HEAD. Latest-head CI, database integration tests, browser/E2E, security review and deployment remain unverified.
