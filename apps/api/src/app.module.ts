@@ -32,6 +32,7 @@ import { AuthModule } from "./modules/auth/auth.module";
         AWS_S3_BUCKET: Joi.string().optional(),
         AWS_ACCESS_KEY_ID: Joi.string().optional(),
         AWS_SECRET_ACCESS_KEY: Joi.string().optional(),
+        AWS_SESSION_TOKEN: Joi.string().optional(),
         MEDIA_PUBLIC_BASE_URL: Joi.string().uri({ scheme: ["http", "https"] }).optional(),
       }),
     }),
