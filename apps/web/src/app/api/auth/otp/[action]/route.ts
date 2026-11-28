@@ -21,7 +21,19 @@ export async function POST(
       cache: "no-store",
     });
     const payload = await upstream.json().catch(() => ({ message: "Unable to process the request." }));
-    return NextResponse.json(payload, { status: upstream.status });
+    if (!upstream.ok || action !== "verify" || typeof payload.sessionToken !== "string") {
+      return NextResponse.json(payload, { status: upstream.status });
+    }
+    const { sessionToken, ...safePayload } = payload;
+    const response = NextResponse.json(safePayload, { status: upstream.status });
+    response.cookies.set("anan_session", sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      expires: new Date(payload.expiresAt),
+    });
+    return response;
   } catch {
     return NextResponse.json(
       { message: "The verification service is temporarily unavailable." },
