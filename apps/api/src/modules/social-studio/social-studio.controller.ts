@@ -59,6 +59,9 @@ export class SocialStudioController {
     return this.social.blockCreator(auth, handle);
   }
 
+  @Get("creators/me/blocks")
+  myBlockedCreators(@Headers("authorization") auth?: string) { return this.social.myBlockedCreators(auth); }
+
   @Get("creators/:handle/block-status")
   creatorBlockStatus(@Headers("authorization") auth: string | undefined, @Param("handle") handle: string) {
     return this.social.creatorBlockStatus(auth, handle);
