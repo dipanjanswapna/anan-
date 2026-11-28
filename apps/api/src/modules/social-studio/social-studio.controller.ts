@@ -2,6 +2,8 @@ import { Body, Controller, Get, Headers, Param, Patch, Post, Query } from "@nest
 import { CreateSocialPostDto } from "./dto/create-social-post.dto";
 import { UpsertCreatorProfileDto } from "./dto/upsert-creator-profile.dto";
 import { ReviewSocialPostDto } from "./dto/review-social-post.dto";
+import { ReportSocialPostDto } from "./dto/report-social-post.dto";
+import { ReviewSocialReportDto } from "./dto/review-social-report.dto";
 import { SocialStudioService } from "./social-studio.service";
 
 @Controller()
@@ -33,11 +35,36 @@ export class SocialStudioController {
   }
 
   @Get("social/posts")
-  publicFeed(@Query("limit") limit?: string) { return this.social.publicFeed(limit); }
+  publicFeed(@Query("limit") limit?: string, @Headers("authorization") auth?: string) { return this.social.publicFeed(limit, auth); }
+
+  @Post("social/posts/:id/report")
+  reportPost(@Headers("authorization") auth: string | undefined, @Param("id") id: string, @Body() input: ReportSocialPostDto) {
+    return this.social.reportPost(auth, id, input);
+  }
+
+  @Post("creators/:handle/block")
+  blockCreator(@Headers("authorization") auth: string | undefined, @Param("handle") handle: string) {
+    return this.social.blockCreator(auth, handle);
+  }
+
+  @Post("creators/:handle/unblock")
+  unblockCreator(@Headers("authorization") auth: string | undefined, @Param("handle") handle: string) {
+    return this.social.unblockCreator(auth, handle);
+  }
 
   @Get("admin/social/posts")
   moderationQueue(@Headers("authorization") auth: string | undefined, @Query("status") status?: string) {
     return this.social.moderationQueue(auth, status);
+  }
+
+  @Get("admin/social/reports")
+  moderationReports(@Headers("authorization") auth: string | undefined, @Query("status") status?: string) {
+    return this.social.moderationReports(auth, status);
+  }
+
+  @Patch("admin/social/reports/:id/review")
+  reviewReport(@Headers("authorization") auth: string | undefined, @Param("id") id: string, @Body() input: ReviewSocialReportDto) {
+    return this.social.reviewReport(auth, id, input);
   }
 
   @Patch("admin/social/posts/:id/review")
