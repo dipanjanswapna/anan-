@@ -160,6 +160,9 @@ model SellerProfile {
   user              User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   products          Product[]
   orders             SellerOrder[]
+  earnings           SellerEarning[]
+  payoutRequests     SellerPayoutRequest[]
+  commissionBps      Int          @default(1000)
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -306,6 +309,7 @@ model SellerOrder {
   items             OrderItem[]
   shipment          CourierShipment?
   returnRequest     ReturnRequest?
+  earning           SellerEarning?
 
   @@unique([orderId, sellerId])
   @@index([sellerId, status, createdAt])
