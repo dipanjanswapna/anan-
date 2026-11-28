@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Package, ShieldCheck, Store, Truck } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { ProductPurchaseActions } from "@/components/product-purchase-actions";
 
 type Product = {
   id: string; nameEn: string; nameBn: string | null; slug: string;
@@ -45,6 +46,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
             {product.nameBn && <p className="mt-2 text-base text-[#82778f]">{product.nameBn}</p>}
             <div className="mt-7 flex flex-wrap items-baseline gap-3"><span className="text-3xl font-black text-[#26183c]">৳{taka(product.pricePaisa)}</span>{product.compareAtPricePaisa && <span className="text-base text-[#a79eaf] line-through">৳{taka(product.compareAtPricePaisa)}</span>}</div>
             <p className={`mt-4 inline-flex rounded-full px-3 py-1.5 text-xs font-bold ${product.stockOnHand > 0 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>{product.stockOnHand > 0 ? `In stock · ${product.stockOnHand} available` : "Currently out of stock"}</p>
+            <ProductPurchaseActions productId={product.id} stockOnHand={product.stockOnHand}/>
             <div className="my-7 h-px bg-[#f0ecf4]"/>
             <h2 className="text-sm font-bold text-[#302344]">Product description</h2>
             <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#756987]">{product.descriptionEn || "The seller has not added an English description yet."}</p>
@@ -55,7 +57,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
               <span className="text-xs font-bold text-brand-600">Visit store →</span>
             </Link>
             <div className="mt-5 grid grid-cols-2 gap-3 text-xs text-[#82778f]"><div className="flex items-center gap-2 rounded-xl border border-[#eeeaf3] p-3"><ShieldCheck size={17} className="text-brand-500"/> Approved seller</div><div className="flex items-center gap-2 rounded-xl border border-[#eeeaf3] p-3"><Truck size={17} className="text-brand-500"/> Delivery options at checkout</div></div>
-            <p className="mt-5 text-[11px] leading-5 text-[#a39aaa]">Ordering, payment and delivery checkout are being developed. This page currently provides verified public catalog information only.</p>
+            <p className="mt-5 text-[11px] leading-5 text-[#a39aaa]">Cart and wishlist are available for signed-in customers. Checkout, delivery calculation and payment will be introduced in the next release.</p>
           </div>
         </div>
       </section>
