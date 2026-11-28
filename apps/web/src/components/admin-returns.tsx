@@ -50,7 +50,7 @@ export function AdminReturns() {
     finally { setBusy(""); }
   }
   function setRefundField(id: string, key: "reference" | "method" | "amount" | "confirmed", value: string | boolean) {
-    setRefund((old) => ({ ...old, [id]: { reference: "", method: "BKASH", amount: "", confirmed: false, ...old[id], [key]: value } }));
+    setRefund((old) => ({ ...old, [id]: { ...{ reference: "", method: "BKASH", amount: "", confirmed: false }, ...old[id], [key]: value } }));
   }
   return <main className="min-h-screen bg-[#faf9fc]"><div className="container-shell max-w-6xl py-9">
     <header className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-brand-600">ANAN Admin Console</p><h1 className="mt-2 flex items-center gap-2 text-3xl font-extrabold text-[#281743]"><ShieldAlert size={26}/> Return & dispute review</h1><p className="mt-1 text-sm text-[#82788f]">Review seller decisions, confirm returned items and record manually completed refunds.</p></div><div className="flex gap-3"><Link href="/admin/notifications" className="text-xs font-bold text-brand-700">Notifications</Link><button onClick={() => { setLoading(true); void load().catch((e) => setError(e instanceof Error ? e.message : "Refresh failed.")).finally(() => setLoading(false)); }} className="inline-flex items-center gap-2 rounded-xl border border-[#e8e2f0] bg-white px-3 py-2 text-xs font-bold text-[#5e526d]"><RefreshCw size={14}/> Refresh</button></div></header>
