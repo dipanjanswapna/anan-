@@ -1,4 +1,4 @@
-import { Controller, Get, Headers, Param, Patch, Query } from "@nestjs/common";
+import { Controller, Get, Headers, Param, Patch } from "@nestjs/common";
 import { AdminNotificationsService } from "./admin-notifications.service";
 
 @Controller("admin/notifications")
@@ -8,11 +8,6 @@ export class AdminNotificationsController {
   @Get()
   list(@Headers("authorization") authorization?: string) {
     return this.notifications.list(authorization);
-  }
-
-  @Get("orders")
-  monitorOrders(@Headers("authorization") authorization?: string, @Query("status") status?: string) {
-    return this.notifications.monitorOrders(authorization, status);
   }
 
   @Patch(":id/read")
