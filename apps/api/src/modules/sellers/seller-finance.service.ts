@@ -77,6 +77,8 @@ export class SellerFinanceService {
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.sellerOrder.findUnique({ where: { id: sellerOrderId }, include: { shipment: true, returnRequest: true, seller: { select: { id: true, commissionBps: true } } } });
       if (!order) throw new NotFoundException("Seller order not found.");
+      const existingEarning = await tx.sellerEarning.findUnique({ where: { sellerOrderId: order.id }, select: { id: true } });
+      if (existingEarning) throw new ConflictException("Seller earnings for this order have already been released.");
       if (order.status !== "DELIVERED" || !order.shipment?.deliveredAt) throw new ConflictException("Only courier-confirmed delivered orders can be released.");
       if (order.returnRequest && order.returnRequest.status !== "REJECTED") throw new ConflictException("A return request is active or has not been finally resolved.");
       const deliveredAt = order.shipment.deliveredAt;
