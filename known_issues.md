@@ -136,3 +136,11 @@ Retain a short resolved entry with issue, former severity, PR/commit, tests/CI e
 - **Impact:** This is not launch-ready UGC infrastructure. External media is not uploaded to controlled storage, decoded/re-encoded, malware scanned or checked for ownership/codec/duration. Age assurance, reporting, blocking/muting, appeals, evidence retention, escalation and staffed response are absent.
 - **Action:** Keep 18+ content disabled until genuine age assurance exists. Add controlled media upload/processing, user reporting and block/mute controls, moderation policy tooling, audit/evidence retention, escalation/SLA and operational staffing before public launch.
 - **State:** Open; initial foundation in progress, not merged or deployed.
+
+
+### P2 — Social Studio trust and media controls remain incomplete
+- **Area:** Social Studio / user-generated content.
+- **Evidence:** The active Social Studio feature branch now includes post reporting, creator block/unblock, feed filtering for blocked creators, and Admin report disposition with audit. It still accepts externally hosted HTTPS media URLs.
+- **Impact:** Report/block primitives do not constitute a full Trust & Safety operation; harmful media may evade detection and blocked creators can still be opened directly by URL.
+- **Action:** Add controlled upload and media processing/scanning, age assurance before any 18+ features, creator profile block-aware handling, appeals, evidence retention, abuse controls, escalation and staffed response. Add DB integration/E2E tests and verify migration deployment.
+- **State:** Partial implementation on PR #29 branch; not merged/deployed; CI pending.
