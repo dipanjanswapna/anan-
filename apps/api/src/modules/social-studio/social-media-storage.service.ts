@@ -72,7 +72,8 @@ export class SocialMediaStorageService {
     });
     // SigV4 canonical headers must not contain a trailing newline: the join below adds the required separator.
     // Bind Content-Type into the signature so a client cannot change the declared media type after URL issuance.
-    const canonicalHeaders = `content-type:${input.contentType}\nhost:${cfg.host}`;\n    const canonicalRequest = ["PUT", `/${encodeKey(storageKey)}`, query, canonicalHeaders, "content-type;host", "UNSIGNED-PAYLOAD"].join("\n");
+    const canonicalHeaders = `content-type:${input.contentType}\nhost:${cfg.host}`;
+    const canonicalRequest = ["PUT", `/${encodeKey(storageKey)}`, query, canonicalHeaders, "content-type;host", "UNSIGNED-PAYLOAD"].join("\n");
     const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, sha256(canonicalRequest)].join("\n");
     const signature = createHmac("sha256", this.signingKey(cfg.secretAccessKey, dateStamp, cfg.region)).update(stringToSign).digest("hex");
     return {
