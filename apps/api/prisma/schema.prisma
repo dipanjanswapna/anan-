@@ -57,6 +57,18 @@ enum PaymentMethod {
   CASH_ON_DELIVERY
 }
 
+enum SellerPayoutStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum SellerEarningStatus {
+  AVAILABLE
+  PAID
+}
+
 enum ReturnRequestStatus {
   REQUESTED
   APPROVED
@@ -148,6 +160,9 @@ model SellerProfile {
   user              User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   products          Product[]
   orders             SellerOrder[]
+  earnings           SellerEarning[]
+  payoutRequests     SellerPayoutRequest[]
+  commissionBps      Int          @default(1000)
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -294,6 +309,7 @@ model SellerOrder {
   items             OrderItem[]
   shipment          CourierShipment?
   returnRequest     ReturnRequest?
+  earning           SellerEarning?
 
   @@unique([orderId, sellerId])
   @@index([sellerId, status, createdAt])
@@ -442,4 +458,49 @@ model ReturnRequest {
   customer       User                @relation(fields: [customerId], references: [id], onDelete: Restrict)
   @@index([customerId, createdAt])
   @@index([status, createdAt])
+}
+
+
+model SellerEarning {
+  id                 String              @id @default(cuid())
+  sellerId           String
+  sellerOrderId      String              @unique
+  payoutRequestId    String?
+  grossPaisa         BigInt
+  commissionPaisa    BigInt
+  netPaisa           BigInt
+  status             SellerEarningStatus @default(AVAILABLE)
+  deliveredAt        DateTime
+  releasedAt         DateTime            @default(now())
+  paidAt             DateTime?
+  seller             SellerProfile       @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  sellerOrder        SellerOrder         @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
+  payoutRequest      SellerPayoutRequest? @relation(fields: [payoutRequestId], references: [id], onDelete: Restrict)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([sellerId, status, releasedAt])
+  @@index([payoutRequestId])
+}
+
+model SellerPayoutRequest {
+  id                 String            @id @default(cuid())
+  sellerId           String
+  amountPaisa        BigInt
+  status             SellerPayoutStatus @default(REQUESTED)
+  payoutMethod       String
+  payoutDestination  String
+  adminNotes         String?
+  payoutReference    String?
+  requestedAt        DateTime          @default(now())
+  reviewedAt         DateTime?
+  reviewedByUserId   String?
+  paidAt             DateTime?
+  seller             SellerProfile     @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  earnings           SellerEarning[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([sellerId, status, requestedAt])
+  @@index([status, requestedAt])
 }
