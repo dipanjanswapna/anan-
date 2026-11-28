@@ -34,7 +34,7 @@ export function CustomerOtpForm() {
         setStep("code");
         setNotice(result.message || "If this number can receive messages, a code has been sent.");
       } else {
-        setNotice("Phone number verified. Account sign-in is not enabled yet.");
+        setNotice(result.message || "You are now signed in to ANAN.");
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to continue. Please try again.");
