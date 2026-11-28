@@ -48,12 +48,13 @@ export class ProductImagesService {
     const bucket = this.config.get<string>("AWS_S3_BUCKET");
     const accessKeyId = this.config.get<string>("AWS_ACCESS_KEY_ID");
     const secretAccessKey = this.config.get<string>("AWS_SECRET_ACCESS_KEY");
+    const sessionToken = this.config.get<string>("AWS_SESSION_TOKEN");
     if (!region || !bucket || !accessKeyId || !secretAccessKey) {
       throw new ServiceUnavailableException("Product image storage is not configured. Set the AWS S3 media environment variables.");
     }
     const host = `${bucket}.s3.${region}.amazonaws.com`;
     const publicBaseUrl = (this.config.get<string>("MEDIA_PUBLIC_BASE_URL") || `https://${host}`).replace(/\/$/, "");
-    return { region, bucket, accessKeyId, secretAccessKey, host, publicBaseUrl };
+    return { region, bucket, accessKeyId, secretAccessKey, sessionToken, host, publicBaseUrl };
   }
 
   private async sellerContext(authorization?: string) {
@@ -112,6 +113,7 @@ export class ProductImagesService {
       "X-Amz-Date": amzDate,
       "X-Amz-Expires": "300",
       "X-Amz-SignedHeaders": "host",
+      ...(cfg.sessionToken ? { "X-Amz-Security-Token": cfg.sessionToken } : {}),
     });
     const canonicalRequest = ["PUT", `/${encodeKey(storageKey)}`, query, `host:${cfg.host}\n`, "host", "UNSIGNED-PAYLOAD"].join("\n");
     const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, sha256(canonicalRequest)].join("\n");
@@ -129,8 +131,8 @@ export class ProductImagesService {
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
     const dateStamp = amzDate.slice(0, 8);
     const payloadHash = sha256("");
-    const canonicalHeaders = `host:${cfg.host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
-    const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+    const canonicalHeaders = `host:${cfg.host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n${cfg.sessionToken ? `x-amz-security-token:${cfg.sessionToken}\n` : ""}`;
+    const signedHeaders = `host;x-amz-content-sha256;x-amz-date${cfg.sessionToken ? ";x-amz-security-token" : ""}`;
     const canonicalRequest = ["HEAD", `/${encodeKey(storageKey)}`, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
     const scope = `${dateStamp}/${cfg.region}/s3/aws4_request`;
     const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, sha256(canonicalRequest)].join("\n");
@@ -140,7 +142,7 @@ export class ProductImagesService {
     try {
       response = await fetch(`https://${cfg.host}/${encodeKey(storageKey)}`, {
         method: "HEAD",
-        headers: { Authorization: authorization, "x-amz-date": amzDate, "x-amz-content-sha256": payloadHash },
+        headers: { Authorization: authorization, "x-amz-date": amzDate, "x-amz-content-sha256": payloadHash, ...(cfg.sessionToken ? { "x-amz-security-token": cfg.sessionToken } : {}) },
         signal: AbortSignal.timeout(8000),
       });
     } catch {
