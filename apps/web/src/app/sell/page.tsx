@@ -28,7 +28,7 @@ export default function SellOnAnanPage() {
             </div>
           </div>
           <div className="rounded-[26px] border border-[#eee8f5] bg-white p-5 shadow-[0_18px_60px_rgba(47,25,75,.06)] sm:p-8">
-            <div className="mb-7"><p className="text-[10px] font-bold uppercase tracking-[.18em] text-brand-600">Get started</p><h2 className="mt-2 text-2xl font-extrabold text-[#2b1b43]">Apply to sell on ANAN</h2><p className="mt-2 text-xs leading-5 text-[#958ba2]">No subscription fee. Seller approval is required before selling.</p></div>
+            <div className="mb-7 flex flex-wrap items-center justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-brand-600">Get started</p><h2 className="mt-2 text-2xl font-extrabold text-[#2b1b43]">Apply to sell on ANAN</h2><p className="mt-2 text-xs leading-5 text-[#958ba2]">No subscription fee. Seller approval is required before selling.</p></div><Link href="/seller/login" className="rounded-xl border border-brand-200 px-3 py-2 text-xs font-bold text-brand-700">Seller sign in</Link></div>
             <SellerApplicationForm/>
           </div>
         </section>
