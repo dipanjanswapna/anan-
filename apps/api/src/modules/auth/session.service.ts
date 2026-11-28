@@ -17,19 +17,21 @@ export class SessionService {
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const now = new Date();
     const session = await this.prisma.customerSession.findFirst({
-      where: { tokenHash, revokedAt: null, expiresAt: { gt: now }, user: { isActive: true, role: "CUSTOMER" } },
+      where: { tokenHash, revokedAt: null, expiresAt: { gt: now }, user: { isActive: true, role: { in: ["CUSTOMER", "SELLER"] } } },
       select: {
         id: true,
         expiresAt: true,
-        user: { select: { id: true, phone: true, email: true, createdAt: true } },
+        user: { select: { id: true, phone: true, email: true, role: true, createdAt: true, sellerProfile: { select: { status: true } } } },
       },
     });
-    if (!session) throw new UnauthorizedException("Your session has expired. Please sign in again.");
+    if (!session || (session.user.role === "SELLER" && session.user.sellerProfile?.status !== "APPROVED")) {
+      throw new UnauthorizedException("Your session has expired. Please sign in again.");
+    }
     await this.prisma.customerSession.updateMany({
       where: { id: session.id, revokedAt: null, expiresAt: { gt: now } },
       data: { lastUsedAt: now },
     });
-    return { authenticated: true, user: session.user, session: { expiresAt: session.expiresAt } };
+    return { authenticated: true, user: { id: session.user.id, phone: session.user.phone, email: session.user.email, role: session.user.role, createdAt: session.user.createdAt }, session: { expiresAt: session.expiresAt } };
   }
 
   async revoke(authorization?: string) {
