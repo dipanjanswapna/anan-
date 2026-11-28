@@ -1,13 +1,14 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { OtpPurpose } from "@prisma/client";
-import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
+import { OtpPurpose, UserRole } from "@prisma/client";
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { PrismaService } from "../../database/prisma.service";
 import { OtpDeliveryService } from "./otp-delivery.service";
 
@@ -16,6 +17,7 @@ const OTP_COOLDOWN_MS = 60 * 1000;
 const OTP_WINDOW_MS = 15 * 60 * 1000;
 const OTP_MAX_REQUESTS = 3;
 const OTP_MAX_ATTEMPTS = 5;
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class OtpService {
@@ -78,6 +80,9 @@ export class OtpService {
   }
 
   async verify(phone: string, purpose: OtpPurpose, code: string) {
+    if (purpose !== OtpPurpose.CUSTOMER_LOGIN && purpose !== OtpPurpose.CUSTOMER_SIGNUP) {
+      throw new ForbiddenException("This verification purpose cannot create a customer session.");
+    }
     const now = new Date();
     const challenge = await this.prisma.otpChallenge.findFirst({
       where: { phone, purpose, consumedAt: null, expiresAt: { gt: now } },
@@ -110,18 +115,36 @@ export class OtpService {
       throw new BadRequestException("The verification code is incorrect.");
     }
 
-    const consumed = await this.prisma.otpChallenge.updateMany({
-      where: { id: challenge.id, consumedAt: null },
-      data: { consumedAt: now },
+    const rawToken = randomBytes(32).toString("base64url");
+    const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+    const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
+    const user = await this.prisma.$transaction(async (tx) => {
+      const consumed = await tx.otpChallenge.updateMany({
+        where: { id: challenge.id, consumedAt: null, expiresAt: { gt: now } },
+        data: { consumedAt: now },
+      });
+      if (consumed.count !== 1) {
+        throw new UnauthorizedException("The verification code is invalid or expired.");
+      }
+      let account = await tx.user.findUnique({ where: { phone } });
+      if (account && account.role !== UserRole.CUSTOMER) {
+        throw new ForbiddenException("This mobile number is linked to a non-customer account.");
+      }
+      if (account && !account.isActive) {
+        throw new ForbiddenException("This customer account is disabled.");
+      }
+      account = account
+        ? await tx.user.update({ where: { id: account.id }, data: { phoneVerifiedAt: now } })
+        : await tx.user.create({ data: { phone, role: UserRole.CUSTOMER, phoneVerifiedAt: now } });
+      await tx.customerSession.create({ data: { userId: account.id, tokenHash, expiresAt } });
+      return { id: account.id, phone: account.phone, role: account.role };
     });
-    if (consumed.count !== 1) {
-      throw new UnauthorizedException("The verification code is invalid or expired.");
-    }
-
     return {
-      verified: true,
-      purpose,
-      message: "Phone number verified. Account sign-in and session creation are separate steps.",
+      authenticated: true,
+      sessionToken: rawToken,
+      expiresAt: expiresAt.toISOString(),
+      user,
+      message: "You are now signed in to ANAN.",
     };
   }
 }
