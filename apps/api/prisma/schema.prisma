@@ -270,6 +270,7 @@ model SellerOrder {
   orderId           String
   sellerId          String
   status            SellerOrderStatus @default(PENDING_ACCEPTANCE)
+  acceptanceDeadlineAt DateTime?
   subtotalPaisa     BigInt
   deliveryFeePaisa  BigInt            @default(0)
   createdAt         DateTime          @default(now())
