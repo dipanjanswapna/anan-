@@ -170,3 +170,11 @@ Implemented on branch (not main): creator profile/storefront; one-image-or-video
 Open launch blockers: no malware scanning or media sanitization/re-encoding/EXIF removal; no video codec/duration inspection or transcoding; no quarantine-to-approved promotion or verified private media delivery; no IP/device/anonymous abuse controls; no appeal/evidence retention/escalation/staffed SLA; no genuine age assurance; no reach/impression tracking; no automated tests or verified latest-head CI; migrations have not been verified applied. The bucket/CDN must not expose quarantine objects publicly. Keep 18+ content disabled.
 
 CI evidence: run 46144307456 succeeded for an earlier foundation commit only; it is not evidence for current HEAD. Latest-head CI, database integration tests, browser/E2E, security review and deployment remain unverified.
+
+
+### P2 — Social Studio branch synchronization and verification pending (2026-11-28)
+- **Area:** Social Studio / release engineering.
+- **Evidence:** PR #29 feature branch is based on an older `main` commit and GitHub compare reports it diverged from current `main`. No workflow run is currently associated with its latest observed head. `.env.example` had a literal escaped newline in a comment; this was corrected on the feature branch.
+- **Impact:** The feature cannot safely be merged until its branch is synchronized and fresh CI plus migration review pass.
+- **Action:** Merge current `main` into the feature branch without discarding either side; run Prisma/API/Web/Compose CI; inspect migration baseline and add automated coverage; then merge only if GitHub reports mergeable and CI is green.
+- **State:** Open; branch synchronization and fresh validation pending.
