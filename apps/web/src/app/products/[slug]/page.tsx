@@ -54,8 +54,48 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
   const product = await getProduct(slug);
   if (!product) notFound();
 
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://anan.com").replace(/\/$/, "");
+  const productUrl = siteUrl + "/products/" + encodeURIComponent(product.slug);
+  const schemaPrice = (() => {
+    const amount = BigInt(product.pricePaisa);
+    return `${amount / 100n}.${(amount % 100n).toString().padStart(2, "0")}`;
+  })();
+  const productStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.nameEn,
+    ...(product.nameBn ? { alternateName: product.nameBn } : {}),
+    description: product.descriptionEn || product.nameEn,
+    category: product.category.nameEn,
+    url: productUrl,
+    offers: {
+      "@type": "Offer",
+      url: productUrl,
+      priceCurrency: "BDT",
+      price: schemaPrice,
+      availability: product.stockOnHand > 0
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      itemCondition: "https://schema.org/NewCondition",
+      seller: { "@type": "Organization", name: product.seller.storeName },
+    },
+  };
+  const breadcrumbStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
+      { "@type": "ListItem", position: 2, name: "Products", item: siteUrl + "/products" },
+      { "@type": "ListItem", position: 3, name: product.category.nameEn, item: siteUrl + "/products?category=" + encodeURIComponent(product.category.slug) },
+      { "@type": "ListItem", position: 4, name: product.nameEn, item: productUrl },
+    ],
+  };
+  const safeJsonLd = (value: unknown) => JSON.stringify(value).replace(/</g, "\\u003c");
+
   return (
     <main className="min-h-screen bg-[#fcfbfe]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(productStructuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbStructuredData) }} />
       <SiteHeader />
       <section className="container-shell py-7 sm:py-10">
         <Link href="/products" className="inline-flex items-center gap-2 text-sm font-semibold text-[#756987] hover:text-brand-600"><ArrowLeft size={16}/> Back to products</Link>

@@ -21,6 +21,33 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
 };
 
+const organizationStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "ANAN",
+  url: siteUrl,
+};
+const websiteStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "ANAN",
+  url: siteUrl,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: siteUrl + "/products?q={search_term_string}",
+    "query-input": "required name=search_term_string",
+  },
+};
+const safeJsonLd = (value: unknown) => JSON.stringify(value).replace(/</g, "\\u003c");
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body className={`${inter.variable} ${bengali.variable}`}>{children}</body></html>;
+  return (
+    <html lang="en">
+      <body className={`${inter.variable} ${bengali.variable}`}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationStructuredData) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteStructuredData) }} />
+        {children}
+      </body>
+    </html>
+  );
 }
