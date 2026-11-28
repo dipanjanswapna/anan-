@@ -134,3 +134,11 @@ Web proxy routes are under `/api/social` and use the existing HttpOnly `anan_ses
 - Returns current follower count, new followers in the last 30 days, published/pending/rejected post counts, published-post likes and approved comments in the last 30 days, and the 10 most recent published posts with their current like/comment totals.
 - Response explicitly states that reach and impressions are unavailable because view tracking has not been implemented. Do not present engagement counts as reach or impressions.
 - This is an initial analytics summary, not a full time-series dashboard; historical daily snapshots and unique-view tracking remain future work.
+
+## S3 presigned upload signature correction (2026-11-28)
+
+- Corrected SigV4 canonical-request newline construction for both presigned PUT and server-side HEAD verification. Canonical header blocks no longer contain an extra trailing newline before the canonical-request separator.
+- The PUT signature now includes the exact `Content-Type` header (`content-type;host`) so the browser must upload with the same declared media type used when requesting the URL.
+- Removed the unused `publicUrl` field from the upload-preparation response; the Creator UI uploads to `uploadUrl` and does not consume this field.
+- This fixes request-signing correctness and reduces header tampering, but it does **not** validate file magic bytes, decode media, scan malware, strip EXIF, inspect video codecs/duration, or make quarantine storage private. Keep quarantine objects inaccessible from public bucket/CDN policies and do not treat MIME metadata as content verification.
+- Validation still required against a real private S3 bucket (PUT + HEAD, with and without temporary session credentials), plus automated tests. No AWS credentials or live bucket are available in this repository review, so live S3 verification is not claimed.

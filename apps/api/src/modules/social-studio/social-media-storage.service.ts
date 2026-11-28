@@ -67,16 +67,18 @@ export class SocialMediaStorageService {
       "X-Amz-Credential": `${cfg.accessKeyId}/${scope}`,
       "X-Amz-Date": amzDate,
       "X-Amz-Expires": "300",
-      "X-Amz-SignedHeaders": "host",
+      "X-Amz-SignedHeaders": "content-type;host",
       ...(cfg.sessionToken ? { "X-Amz-Security-Token": cfg.sessionToken } : {}),
     });
-    const canonicalRequest = ["PUT", `/${encodeKey(storageKey)}`, query, `host:${cfg.host}\n`, "host", "UNSIGNED-PAYLOAD"].join("\n");
+    // SigV4 canonical headers must not contain a trailing newline: the join below adds the required separator.
+    // Bind Content-Type into the signature so a client cannot change the declared media type after URL issuance.
+    const canonicalHeaders = `content-type:${input.contentType}\nhost:${cfg.host}`;
+    const canonicalRequest = ["PUT", `/${encodeKey(storageKey)}`, query, canonicalHeaders, "content-type;host", "UNSIGNED-PAYLOAD"].join("\n");
     const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, sha256(canonicalRequest)].join("\n");
     const signature = createHmac("sha256", this.signingKey(cfg.secretAccessKey, dateStamp, cfg.region)).update(stringToSign).digest("hex");
     return {
       storageKey,
       uploadUrl: `https://${cfg.host}/${encodeKey(storageKey)}?${query}&X-Amz-Signature=${signature}`,
-      publicUrl: `${cfg.publicBaseUrl}/${encodeKey(storageKey)}`,
       contentType: input.contentType,
       sizeBytes: input.sizeBytes,
       expiresInSeconds: 300,
@@ -97,7 +99,8 @@ export class SocialMediaStorageService {
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
     const dateStamp = amzDate.slice(0, 8);
     const payloadHash = sha256("");
-    const canonicalHeaders = `host:${cfg.host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n${cfg.sessionToken ? `x-amz-security-token:${cfg.sessionToken}\n` : ""}`;
+    // Do not append a newline here; the canonical-request join supplies exactly one header separator.
+    const canonicalHeaders = `host:${cfg.host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}${cfg.sessionToken ? `\nx-amz-security-token:${cfg.sessionToken}` : ""}`;
     const signedHeaders = `host;x-amz-content-sha256;x-amz-date${cfg.sessionToken ? ";x-amz-security-token" : ""}`;
     const canonicalRequest = ["HEAD", `/${encodeKey(input.storageKey)}`, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
     const scope = `${dateStamp}/${cfg.region}/s3/aws4_request`;
