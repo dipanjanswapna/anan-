@@ -133,26 +133,34 @@ export class OtpService {
       if (consumed.count !== 1) {
         throw new UnauthorizedException("The verification code is invalid or expired.");
       }
-      let account = await tx.user.findUnique({ where: { phone }, include: { sellerProfile: true } });
+      const existingAccount = await tx.user.findUnique({ where: { phone }, include: { sellerProfile: true } });
+      let accountId: string;
+      let accountPhone: string | null;
+      let accountRole: UserRole;
       if (purpose === OtpPurpose.SELLER_PHONE_VERIFICATION) {
-        if (!account || account.role !== UserRole.SELLER || !account.isActive || account.sellerProfile?.status !== "APPROVED") {
+        if (!existingAccount || existingAccount.role !== UserRole.SELLER || !existingAccount.isActive || existingAccount.sellerProfile?.status !== "APPROVED") {
           throw new ForbiddenException("This seller account is not approved or active.");
         }
+        accountId = existingAccount.id;
+        accountPhone = existingAccount.phone;
+        accountRole = existingAccount.role;
       } else {
-        if (account && account.role !== UserRole.CUSTOMER) {
+        if (existingAccount && existingAccount.role !== UserRole.CUSTOMER) {
           throw new ForbiddenException("This mobile number is linked to a non-customer account.");
         }
-        if (account && !account.isActive) {
+        if (existingAccount && !existingAccount.isActive) {
           throw new ForbiddenException("This customer account is disabled.");
         }
-        account = account
-          ? await tx.user.update({ where: { id: account.id }, data: { phoneVerifiedAt: now } })
+        const customerAccount = existingAccount
+          ? await tx.user.update({ where: { id: existingAccount.id }, data: { phoneVerifiedAt: now } })
           : await tx.user.create({ data: { phone, role: UserRole.CUSTOMER, phoneVerifiedAt: now } });
+        accountId = customerAccount.id;
+        accountPhone = customerAccount.phone;
+        accountRole = customerAccount.role;
       }
-      if (!account) throw new UnauthorizedException("The account could not be verified.");
-      await tx.user.update({ where: { id: account.id }, data: { phoneVerifiedAt: now } });
-      await tx.customerSession.create({ data: { userId: account.id, tokenHash, expiresAt } });
-      return { id: account.id, phone: account.phone, role: account.role };
+      await tx.user.update({ where: { id: accountId }, data: { phoneVerifiedAt: now } });
+      await tx.customerSession.create({ data: { userId: accountId, tokenHash, expiresAt } });
+      return { id: accountId, phone: accountPhone, role: accountRole };
     });
     return {
       authenticated: true,
