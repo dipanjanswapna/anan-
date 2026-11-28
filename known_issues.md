@@ -144,3 +144,11 @@ Retain a short resolved entry with issue, former severity, PR/commit, tests/CI e
 - **Impact:** Report/block primitives do not constitute a full Trust & Safety operation; harmful media may evade detection and blocked creators can still be opened directly by URL.
 - **Action:** Add controlled upload and media processing/scanning, age assurance before any 18+ features, creator profile block-aware handling, appeals, evidence retention, abuse controls, escalation and staffed response. Add DB integration/E2E tests and verify migration deployment.
 - **State:** Partial implementation on PR #29 branch; not merged/deployed; CI pending.
+
+
+### P2 — Social Studio media upload is only a first storage gate
+- **Area:** Social Studio / user-generated content.
+- **Evidence:** PR #29 branch now supports authenticated presigned S3 uploads and signed HEAD checks for JPEG/PNG/WebP images (10 MiB) and MP4/WebM videos (100 MiB). External URL draft creation is disabled.
+- **Impact:** MIME/size/HEAD verification does not detect malware, spoofed media, unsafe visual/audio content or malicious payloads. No decoding/re-encoding, EXIF removal, codec/duration inspection, transcoding, quarantine-to-approved promotion, private delivery guarantee, quotas or orphan cleanup exists. If the configured bucket/CDN exposes the quarantine prefix, an uploaded object may be directly reachable even while its post is not published in ANAN feeds.
+- **Action:** Configure a private quarantine origin, implement malware/content scanning and media normalization, enforce video duration/codec, promote only approved assets to a separately controlled delivery origin, add quotas/rate limits/orphan cleanup, then complete security and integration testing.
+- **State:** Partial implementation on PR #29 branch; not merged/deployed; CI run 46140234885 pending at documentation update.
