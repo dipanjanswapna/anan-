@@ -5,7 +5,7 @@ Mobile-first multi-vendor e-commerce platform for Bangladesh.
 ## Development principles
 - Mobile-first responsive UX
 - TypeScript across frontend and backend
-- Secure defaults; never commit secrets
+- Secure defaults; never commit production secrets
 - Automated tests and CI checks
 - Incremental feature delivery
 
@@ -20,7 +20,11 @@ Mobile-first multi-vendor e-commerce platform for Bangladesh.
 
 Customers can visit http://localhost:3000/sell to submit a seller application. The Next.js route proxies the request to `POST /api/v1/seller-applications`; NestJS validates the contact and business fields and stores a pending application in PostgreSQL. Duplicate email addresses or phone numbers are rejected. Applications do not create login accounts, grant seller access, or approve a store.
 
-Before public launch, add request rate limiting, abuse protection, verified email/mobile OTP, and authenticated Admin review/approval. Do not treat an application as NID verification or permission to list products.
+## Customer OTP foundation
+
+The `/login` page and `POST /api/v1/auth/otp/request` and `POST /api/v1/auth/otp/verify` endpoints provide phone challenge verification. Codes are HMAC-hashed in PostgreSQL, expire after five minutes, allow at most five attempts, and are limited to three requests per 15 minutes with a 60-second resend wait. Configure an SMS adapter using `OTP_DELIVERY_URL` and `OTP_DELIVERY_TOKEN` before sending real codes. Set a unique `OTP_HASH_SECRET` of at least 32 characters in every environment. The Docker Compose value is a disposable local-development example only.
+
+OTP verification does not yet create an account, authenticate a session, or issue a token. Do not describe a verified phone as a signed-in customer. Production requires provider-specific SMS integration, IP/device abuse controls, monitoring, and reviewed database migrations.
 
 ## Run the complete local stack with Docker
 
