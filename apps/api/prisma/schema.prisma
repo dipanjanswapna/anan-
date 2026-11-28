@@ -96,6 +96,7 @@ model User {
   emailVerifiedAt DateTime?
   phoneVerifiedAt DateTime?
   sellerProfile   SellerProfile?
+  creatorProfile  CreatorProfile?
   sessions        CustomerSession[]
   addresses       CustomerAddress[]
   cartItems       CartItem[]
@@ -471,4 +472,51 @@ model ReturnRequest {
   customer       User                @relation(fields: [customerId], references: [id], onDelete: Restrict)
   @@index([customerId, createdAt])
   @@index([status, createdAt])
+}
+
+
+enum SocialMediaType {
+  IMAGE
+  VIDEO
+}
+
+enum SocialPostStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  HIDDEN
+}
+
+model CreatorProfile {
+  id          String       @id @default(cuid())
+  userId      String       @unique
+  handle      String       @unique
+  displayName String
+  bio         String?
+  avatarUrl   String?
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts       SocialPost[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([createdAt])
+}
+
+model SocialPost {
+  id               String           @id @default(cuid())
+  creatorProfileId String
+  mediaType        SocialMediaType
+  mediaUrl         String
+  caption          String?
+  status           SocialPostStatus @default(DRAFT)
+  moderationNotes  String?
+  reviewedAt       DateTime?
+  reviewedByUserId String?
+  creator          CreatorProfile   @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([status, createdAt])
+  @@index([creatorProfileId, status, createdAt])
 }
