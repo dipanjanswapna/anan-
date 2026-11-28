@@ -74,3 +74,34 @@ Web proxy routes are under `/api/social` and use the existing HttpOnly `anan_ses
 - `GET /api/social/me/blocks` returns the signed-in viewer's blocked creators.
 - The `/social/blocked-creators` page lets the viewer review and unblock creators without reopening their storefront.
 - The page is linked from the Social Studio feed. This is a viewer-level content preference, not a platform-wide account ban.
+
+
+## Backend engagement logic (added 2026-11-28)
+- Follow/unfollow uses a unique follower/creator pair; self-follow is rejected. A follow notification is created only for a newly-created relationship.
+- Like/unlike uses a unique user/post pair; only published posts from active creators can be liked.
+- Comments are created as PENDING_REVIEW. Only PUBLISHED comments are returned publicly; Admin/authorized moderation staff can approve, hide or remove pending comments, with an audit record.
+- Save/unsave uses a unique user/post pair. Saved-post retrieval filters out posts that are no longer public.
+- Creator stats expose follower count, published post count, aggregate likes and the signed-in viewer's follow state.
+- In-app notifications are private to the recipient; marking read is scoped to the authenticated recipient.
+- Public creator stats and comments do not expose private account/session data.
+
+### Engagement API routes
+- POST /creators/:handle/follow
+- PATCH /creators/:handle/unfollow
+- GET /creators/:handle/stats
+- POST /social/posts/:id/like
+- GET /social/posts/:id/comments
+- POST /social/posts/:id/comments
+- POST /social/posts/:id/save
+- GET /social/saved
+- GET /social/notifications
+- PATCH /social/notifications/:id/read
+- GET /admin/social/comments
+- PATCH /admin/social/comments/:id/review
+
+### Remaining backend hardening
+- Add automated unit/integration tests for concurrency, permissions, moderation transitions, notification privacy and cursor pagination.
+- Add per-user/per-IP abuse rate limits and anti-spam controls for follows, likes, reports and comments.
+- Add follow-feed ranking and pagination cursor; current feed is latest-first with a bounded page size.
+- Add moderation appeals, evidence retention policy, escalation queue and staff workflow.
+- Complete secure media quarantine scanning and promotion to private approved delivery storage before production.
