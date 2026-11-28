@@ -21,7 +21,7 @@ export default function CreatorDashboardPage() {
 
   async function load() {
     const [p, list] = await Promise.all([fetch("/api/social/me/profile"), fetch("/api/social/me/posts")]);
-    if (p.ok) { const value = await p.json(); setProfile(value); setHandle(value.handle); setDisplayName(value.displayName); setBio(value.bio ?? ""); }
+    if (p.ok) { const value = await p.json(); setProfile(value); if (value) { setHandle(value.handle); setDisplayName(value.displayName); setBio(value.bio ?? ""); } }
     if (list.ok) setPosts(await list.json());
   }
   useEffect(() => { void load(); }, []);
