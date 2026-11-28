@@ -15,6 +15,7 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
   if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "PATCH") { upstreamPath = "/creators/" + path[1] + "/unblock"; protectedRoute = true; }
   if (key === "me/profile" && ["GET", "POST"].includes(method)) { upstreamPath = "/creators/me/profile"; protectedRoute = true; }
   if (key === "me/posts" && ["GET", "POST"].includes(method)) { upstreamPath = "/creators/me/posts"; protectedRoute = true; }
+  if (path.length === 3 && path[0] === "me" && path[1] === "posts" && ["upload", "complete"].includes(path[2]) && method === "POST") { upstreamPath = "/creators/me/posts/" + path[2]; protectedRoute = true; }
   if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "GET") upstreamPath = "/creators/" + path[1];
   if (path.length === 3 && path[0] === "me" && path[1] === "posts" && safeId(path[2]) && method === "POST") { upstreamPath = "/creators/me/posts/" + path[2] + "/submit"; protectedRoute = true; }
   if (path.length === 2 && path[0] === "admin" && path[1] === "posts" && method === "GET") { upstreamPath = "/admin/social/posts"; protectedRoute = true; }
@@ -25,7 +26,7 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
   const token = request.cookies.get("anan_session")?.value;
   if (protectedRoute && !token) return NextResponse.json({ message: "Please sign in to continue." }, { status: 401 });
   try {
-    const hasBody = (method === "PATCH" && !(path[0] === "creators" && path[1] !== "me")) || (method === "POST" && (key === "me/profile" || key === "me/posts" || (path[0] === "admin" && path[1] === "posts" && path.length === 3) || (path[0] === "posts" && path.length === 2)));
+    const hasBody = (method === "PATCH" && !(path[0] === "creators" && path[1] !== "me")) || (method === "POST" && (key === "me/profile" || key === "me/posts" || (path[0] === "me" && path[1] === "posts" && path.length === 3 && ["upload", "complete"].includes(path[2])) || (path[0] === "admin" && path[1] === "posts" && path.length === 3) || (path[0] === "posts" && path.length === 2)));
     const body = hasBody ? await request.json() : undefined;
     const url = new URL(apiBase() + upstreamPath);
     if (method === "GET") request.nextUrl.searchParams.forEach((value, name) => url.searchParams.set(name, value));
