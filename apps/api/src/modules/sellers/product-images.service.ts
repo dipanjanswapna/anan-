@@ -192,11 +192,13 @@ export class ProductImagesService {
       return { image: { ...existing, publicUrl: this.publicUrl(existing.storageKey) }, message: "Image upload already registered." };
     }
     await this.verifyUploadedObject(input.storageKey, input.contentType, input.sizeBytes);
-    const count = await this.prisma.productImage.count({ where: { productId } });
-    if (count >= 8) throw new ConflictException("A product can have at most 8 images.");
-    const image = await this.prisma.productImage.create({
-      data: { productId, storageKey: input.storageKey, contentType: input.contentType, sizeBytes: input.sizeBytes, altText, sortOrder: count },
-    });
+    const image = await this.prisma.$transaction(async (tx) => {
+      const count = await tx.productImage.count({ where: { productId } });
+      if (count >= 8) throw new ConflictException("A product can have at most 8 images.");
+      return tx.productImage.create({
+        data: { productId, storageKey: input.storageKey, contentType: input.contentType, sizeBytes: input.sizeBytes, altText, sortOrder: count },
+      });
+    }, { isolationLevel: "Serializable" });
     return { image: { ...image, publicUrl: this.publicUrl(image.storageKey) }, message: "Image uploaded and submitted for admin review." };
   }
 
