@@ -281,6 +281,7 @@ model SellerOrder {
 
   @@unique([orderId, sellerId])
   @@index([sellerId, status, createdAt])
+  @@index([status, acceptanceDeadlineAt])
 }
 
 model OrderItem {
