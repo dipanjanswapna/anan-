@@ -12,17 +12,30 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
   };
   const addressId = path.length === 3 && path[0] === "me" && path[1] === "addresses" ? path[2] : null;
   const addressRoute = addressId && /^[a-zA-Z0-9_-]{1,64}$/.test(addressId) ? `/customers/me/addresses/${addressId}` : null;
+  const cartProductId = path.length === 4 && path[0] === "me" && path[1] === "cart" && path[2] === "items" ? path[3] : null;
+  const cartItemRoute = cartProductId && /^[a-zA-Z0-9_-]{1,64}$/.test(cartProductId) ? `/customers/me/cart/items/${cartProductId}` : null;
+  const wishlistProductId = path.length === 3 && path[0] === "me" && path[1] === "wishlist" ? path[2] : null;
+  const wishlistItemRoute = wishlistProductId && /^[a-zA-Z0-9_-]{1,64}$/.test(wishlistProductId) ? `/customers/me/wishlist/${wishlistProductId}` : null;
+  const commerceCollectionRoutes: Record<string, string> = {
+    "me/cart": "/customers/me/cart",
+    "me/wishlist": "/customers/me/wishlist",
+  };
   const allowed =
     (key === "me" && ["GET", "PATCH"].includes(method)) ||
     (key === "me/addresses" && ["GET", "POST"].includes(method)) ||
-    (addressRoute !== null && ["PATCH", "DELETE"].includes(method));
-  const upstreamPath = routes[key] ?? addressRoute;
+    (addressRoute !== null && ["PATCH", "DELETE"].includes(method)) ||
+    (key === "me/cart" && method === "GET") ||
+    (cartItemRoute !== null && ["POST", "PATCH", "DELETE"].includes(method)) ||
+    (key === "me/wishlist" && method === "GET") ||
+    (wishlistItemRoute !== null && ["POST", "DELETE"].includes(method));
+  const upstreamPath = routes[key] ?? addressRoute ?? commerceCollectionRoutes[key] ?? cartItemRoute ?? wishlistItemRoute;
   if (!allowed || !upstreamPath) return NextResponse.json({ message: "Not found." }, { status: 404 });
 
   const token = request.cookies.get("anan_session")?.value;
   if (!token) return NextResponse.json({ message: "Please sign in to continue." }, { status: 401 });
   try {
-    const body = method === "GET" || method === "DELETE" ? undefined : await request.json();
+    const hasBody = method === "PATCH" || (method === "POST" && (key === "me/addresses" || cartItemRoute !== null));
+    const body = hasBody ? await request.json() : undefined;
     const upstream = await fetch(`${apiBase()}${upstreamPath}`, {
       method,
       headers: {
