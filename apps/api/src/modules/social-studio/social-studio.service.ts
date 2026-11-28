@@ -1,5 +1,5 @@
 import {
-  BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, TooManyRequestsException, UnauthorizedException,
+  BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException,
 } from "@nestjs/common";
 import { createHash } from "node:crypto";
 import { PrismaService } from "../../database/prisma.service";
@@ -33,7 +33,7 @@ export class SocialStudioService {
       update: { count: { increment: 1 } },
       select: { count: true },
     });
-    if (bucket.count > maximum) throw new TooManyRequestsException("You are doing that too often. Please try again in a minute.");
+    if (bucket.count > maximum) throw new HttpException("You are doing that too often. Please try again in a minute.", HttpStatus.TOO_MANY_REQUESTS);
   }
 
   private async adminContext(authorization?: string) {
