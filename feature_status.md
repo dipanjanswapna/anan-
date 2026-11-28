@@ -137,3 +137,18 @@ Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/
 - No production DB migration, AWS storage setup, media scanning/promotion, browser/E2E suite, security review, deployment, backup restore or disaster-recovery test is verified by this CI run.
 - Next engineering gate: create a reviewed baseline migration strategy (including existing-db adoption instructions), test `migrate deploy` from empty DB, then add automated integration tests for auth, checkout, order state transitions, seller/admin authorization and Social Studio moderation/feed visibility. Only then assess production release.
 
+
+
+## Authoritative main snapshot — 2026-11-28 (supersedes stale entries above)
+
+- Main HEAD at audit: `6aad3fb40eeb89270c494ccd4b5d593e3df99bca`.
+- PR #29 Social Studio is merged to main as `ebe7cbe28ec3a95e49e692f8ec22a2de711c77a7`. It is implemented code, not production-ready.
+- PR #32 Brand/UI refresh is merged to main.
+- PR #33 release-readiness docs audit is merged to main.
+- PR #34 S3 SigV4 signing correction is merged to main as `6aad3fb40eeb89270c494ccd4b5d593e3df99bca`. Latest-head CI run `46154036981` succeeded across Prisma validation/generation, API build, Web typecheck/build, Compose validation and dev image build.
+- Social Studio includes creator profile/storefront, single IMAGE or VIDEO posts, reports/blocks, moderation, follows/likes/comments/saves, notifications, public/following feeds, authenticated DB rate limits and initial analytics. No reach/impression tracking.
+- Social media upload remains quarantine-only. Signed HEAD verifies object metadata, not file content safety. No scanner, decode/re-encode, EXIF stripping, video inspection/transcoding, quarantine promotion, or verified private delivery exists. Admin publication fails closed for quarantine URLs. Keep quarantine private and 18+ disabled pending real age assurance.
+- **P0 migration blocker remains open:** first migration `20261128000000_customer_orders` creates order tables but references `User`, `SellerProfile` and `Product` without creating them. No earlier baseline migration exists. Fresh-database `prisma migrate deploy` has not been proven to work.
+- Runbook: `docs/database/migration-baseline-remediation.md`. Do not reset or mark migrations applied on shared/production data without a verified backup and schema equivalence review.
+- CI proves schema validation/builds/Compose image only; no live database migration replay, production migration, live AWS S3 test, browser/E2E, formal security review, deployment, backup restore or DR test is verified.
+- Next gate: reconstruct historical pre-order schema and design the baseline compatibility strategy; then replay every migration on a brand-new disposable PostgreSQL database and rehearse adoption against a restored copy before any production change.
