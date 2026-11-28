@@ -13,6 +13,9 @@ export class CustomerCommerceController {
   @Post("orders/:id/cancel")
   cancelOrder(@Headers("authorization") authorization: string | undefined, @Param("id") id: string) { return this.commerce.cancelOrder(authorization, id); }
 
+  @Post("orders/seller-orders/:sellerOrderId/returns")
+  requestReturn(@Headers("authorization") authorization: string | undefined, @Param("sellerOrderId") sellerOrderId: string, @Body() input: { reason: string; details?: string }) { return this.commerce.requestReturn(authorization, sellerOrderId, input); }
+
   @Get("orders")
   listOrders(@Headers("authorization") authorization?: string) { return this.commerce.listOrders(authorization); }
 

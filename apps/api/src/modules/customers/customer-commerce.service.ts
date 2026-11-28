@@ -286,6 +286,36 @@ export class CustomerCommerceService {
     }, { isolationLevel: "Serializable" });
   }
 
+  async requestReturn(authorization: string | undefined, sellerOrderId: string, input: { reason: string; details?: string }) {
+    const userId = await this.customerId(authorization);
+    const reason = typeof input.reason === "string" ? input.reason.trim() : "";
+    const details = typeof input.details === "string" ? input.details.trim() : "";
+    const allowedReasons = ["DAMAGED", "WRONG_ITEM", "MISSING_PARTS", "NOT_AS_DESCRIBED", "OTHER"];
+    if (!allowedReasons.includes(reason)) throw new BadRequestException("Choose a valid return reason.");
+    if (details.length > 1500) throw new BadRequestException("Return details must be 1,500 characters or fewer.");
+    return this.prisma.$transaction(async (tx) => {
+      const sellerOrder = await tx.sellerOrder.findFirst({
+        where: { id: sellerOrderId, order: { userId } },
+        include: { order: { select: { id: true } }, returnRequest: true },
+      });
+      if (!sellerOrder) throw new NotFoundException("Order item not found.");
+      if (sellerOrder.status !== "DELIVERED") throw new BadRequestException("Returns can only be requested for delivered seller orders.");
+      if (sellerOrder.returnRequest) return { returnRequest: sellerOrder.returnRequest, replayed: true };
+      const windowDays = Number(process.env.RETURN_REQUEST_WINDOW_DAYS ?? 7);
+      const shipment = await tx.courierShipment.findUnique({ where: { sellerOrderId }, select: { deliveredAt: true } });
+      const deliveredOn = shipment?.deliveredAt ?? sellerOrder.updatedAt;
+      const deadline = new Date(deliveredOn.getTime() + windowDays * 24 * 60 * 60 * 1000);
+      if (new Date() > deadline) throw new BadRequestException("The return request window has expired.");
+      const request = await tx.returnRequest.create({ data: { sellerOrderId, customerId: userId, reason, details: details || null } });
+      await tx.orderEvent.create({
+        data: { orderId: sellerOrder.order.id, actorUserId: userId, actorRole: "CUSTOMER",
+          eventType: "CUSTOMER_RETURN_REQUESTED", note: "Customer submitted a return request.",
+          metadata: { sellerOrderId, returnRequestId: request.id, reason } },
+      });
+      return { returnRequest: request, replayed: false, message: "Return request submitted for seller review." };
+    }, { isolationLevel: "Serializable" });
+  }
+
   async listOrders(authorization?: string) {
     const userId = await this.customerId(authorization);
     const orders = await this.prisma.order.findMany({
@@ -305,6 +335,7 @@ export class CustomerCommerceService {
           include: {
             items: true,
             shipment: { include: { events: { orderBy: { occurredAt: "asc" } } } },
+            returnRequest: true,
           },
         },
       },
