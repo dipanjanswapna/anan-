@@ -81,3 +81,11 @@ Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/
 - Added authenticated post reporting, creator block/unblock, feed exclusion for blocked creators, Admin report queue and transactional report disposition/audit.
 - Added public feed Report control, creator storefront Block control and Admin Report Review UI.
 - Still not merged or deployed; CI, migration execution, integration tests and browser verification pending. Controlled media pipeline, age assurance, appeals, evidence retention and operational escalation remain.
+
+
+### Social Studio controlled upload increment (PR #29 branch)
+- Added direct-to-S3 presigned PUT flow scoped to the authenticated Creator Profile; generated keys live under `social/quarantine/<creator-profile-id>/`.
+- Creator UI supports one JPEG/PNG/WebP image (10 MiB max) or MP4/WebM video (100 MiB max), followed by signed S3 HEAD verification before a DRAFT post is created.
+- Legacy arbitrary external HTTPS media URL draft creation is disabled. Admin post approval remains required before feed/storefront publication.
+- No schema migration added in this increment. CI run 46140234885 is running; not merged, deployed, or storage-configured.
+- Malware scanning, media decoding/re-encoding, EXIF removal, codec/duration inspection, video transcoding, content classification, private-origin delivery, orphan cleanup and quotas remain outstanding.
