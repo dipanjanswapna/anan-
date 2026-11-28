@@ -4,11 +4,13 @@ import { UpsertCreatorProfileDto } from "./dto/upsert-creator-profile.dto";
 import { ReviewSocialPostDto } from "./dto/review-social-post.dto";
 import { ReportSocialPostDto } from "./dto/report-social-post.dto";
 import { ReviewSocialReportDto } from "./dto/review-social-report.dto";
+import { PrepareSocialMediaDto, CompleteSocialMediaDto } from "./dto/social-media-upload.dto";
+import { SocialMediaStorageService } from "./social-media-storage.service";
 import { SocialStudioService } from "./social-studio.service";
 
 @Controller()
 export class SocialStudioController {
-  constructor(private readonly social: SocialStudioService) {}
+  constructor(private readonly social: SocialStudioService, private readonly media: SocialMediaStorageService) {}
 
   @Get("creators/me/profile")
   myProfile(@Headers("authorization") auth?: string) { return this.social.myProfile(auth); }
@@ -23,6 +25,16 @@ export class SocialStudioController {
 
   @Get("creators/me/posts")
   myPosts(@Headers("authorization") auth?: string) { return this.social.myPosts(auth); }
+
+  @Post("creators/me/posts/upload")
+  prepareMedia(@Headers("authorization") auth: string | undefined, @Body() input: PrepareSocialMediaDto) {
+    return this.media.prepare(auth, input);
+  }
+
+  @Post("creators/me/posts/complete")
+  completeMedia(@Headers("authorization") auth: string | undefined, @Body() input: CompleteSocialMediaDto) {
+    return this.media.complete(auth, input);
+  }
 
   @Post("creators/me/posts")
   createPost(@Headers("authorization") auth: string | undefined, @Body() input: CreateSocialPostDto) {
