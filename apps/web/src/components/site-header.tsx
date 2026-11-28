@@ -194,7 +194,7 @@ export function SiteHeader() {
         </div>
 
         {menuOpen ? (
-          <div id="mobile-menu" className="fixed inset-x-0 top-[104px] z-50 max-h-[calc(100dvh-104px)] overflow-y-auto border-t border-[#eeeaf5] bg-white shadow-[0_24px_60px_-30px_rgba(30,15,50,.35)] lg:hidden">
+          <div id="mobile-menu" className="absolute inset-x-0 top-full z-50 max-h-[calc(100dvh-140px)] overflow-y-auto border-t border-[#eeeaf5] bg-white shadow-[0_24px_60px_-30px_rgba(30,15,50,.35)] lg:hidden">
             <nav aria-label="Mobile" className="container-shell grid gap-1 py-5">
               <p className="px-1 pb-1 text-[9.5px] font-bold uppercase tracking-[.16em] text-[#a096ad]">Shop by category</p>
               <div className="grid grid-cols-2 gap-1.5">
