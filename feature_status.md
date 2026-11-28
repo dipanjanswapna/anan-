@@ -75,3 +75,9 @@
 ## Update protocol
 Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/`. Record PR, commit, CI evidence, migrations and external setup separately. Never mark production-ready from CI alone.
 \n\n## Active parallel development\n- Social Studio branch: `feat/social-studio-creator-foundation` (PR pending). Initial Creator Foundation includes profile/storefront, single-media drafts, moderation submission/review and public feed. See `docs/social-studio.md`.\n
+
+### Social Studio Trust & Safety update (branch in progress)
+- Added report reason/status enums, `SocialPostReport` and `CreatorBlock` models plus migration `20261128113000_social_trust_safety`.
+- Added authenticated post reporting, creator block/unblock, feed exclusion for blocked creators, Admin report queue and transactional report disposition/audit.
+- Added public feed Report control, creator storefront Block control and Admin Report Review UI.
+- Still not merged or deployed; CI, migration execution, integration tests and browser verification pending. Controlled media pipeline, age assurance, appeals, evidence retention and operational escalation remain.
