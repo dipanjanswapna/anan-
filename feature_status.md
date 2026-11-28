@@ -123,3 +123,17 @@ Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/
 - Social Studio remains on PR #29 branch and is not merged. The branch has been identified as diverged from current `main`; do not use the old ahead/behind figures above as current status. Synchronize and verify current branch before merge.
 - Social Studio upload is a quarantine-only first step. MIME/size/HEAD checks are not malware scanning or media sanitization. The S3 bucket and any CDN path must keep quarantine objects private. Keep 18+ disabled until age assurance exists.
 - `.env.example` escaped-newline formatting defect was corrected in the current PR branch; re-check CI after branch synchronization.
+
+
+## Authoritative release-readiness snapshot (2026-11-28, after PR #29 merge)
+
+- Current main HEAD at audit: `ebe7cbe28ec3a95e49e692f8ec22a2de711c77a7`.
+- PR #32 Brand/UI refresh: merged to main.
+- PR #29 Social Studio: merged to main as `ebe7cbe28ec3a95e49e692f8ec22a2de711c77a7`; 102 files changed, 9,357 additions, 452 deletions.
+- Main push CI run `46153315690`: completed successfully (Prisma schema validation/generation, API build, Web typecheck/build, Compose validation and development image build).
+- Social Studio is now implemented on main, but remains a non-production-ready first release. Upload is quarantine-only; MIME/size/S3 HEAD checks are not malware scanning or media sanitization. Do not expose `social/quarantine/` through a public bucket/CDN.
+- Confirmed migration blocker: the first checked-in migration is `20261128000000_customer_orders`, and its SQL creates Order/SellerOrder/OrderItem while adding foreign keys to `User`, `SellerProfile`, and `Product`. It does not create those foundational tables. The checked-in migration directory contains subsequent feature migrations but no initial baseline migration. A clean empty PostgreSQL database therefore cannot be assumed to migrate successfully with `prisma migrate deploy`.
+- Do not mark database migration readiness complete until a baseline strategy is authored and tested against a fresh empty database and a representative existing database. Do not run `prisma migrate reset` or mark migrations applied against a database containing user data without a verified backup and schema comparison.
+- No production DB migration, AWS storage setup, media scanning/promotion, browser/E2E suite, security review, deployment, backup restore or disaster-recovery test is verified by this CI run.
+- Next engineering gate: create a reviewed baseline migration strategy (including existing-db adoption instructions), test `migrate deploy` from empty DB, then add automated integration tests for auth, checkout, order state transitions, seller/admin authorization and Social Studio moderation/feed visibility. Only then assess production release.
+
