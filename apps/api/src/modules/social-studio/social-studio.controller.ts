@@ -58,7 +58,10 @@ export class SocialStudioController {
   }
 
   @Get("social/posts")
-  publicFeed(@Query("limit") limit?: string, @Headers("authorization") auth?: string) { return this.social.publicFeed(limit, auth); }
+  publicFeed(@Query("limit") limit?: string, @Headers("authorization") auth?: string, @Query("cursor") cursor?: string) { return this.social.publicFeed(limit, auth, cursor); }
+
+  @Get("social/feed/following")
+  followingFeed(@Headers("authorization") auth: string | undefined, @Query("limit") limit?: string, @Query("cursor") cursor?: string) { return this.social.followingFeed(auth, limit, cursor); }
 
   @Post("social/posts/:id/like")
   toggleLike(@Headers("authorization") auth: string | undefined, @Param("id") id: string) { return this.social.toggleLike(auth, id); }
