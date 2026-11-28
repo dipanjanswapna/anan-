@@ -31,6 +31,9 @@ export class SocialStudioController {
     return this.social.saveProfile(auth, input);
   }
 
+  @Get("creators/me/analytics")
+  myAnalytics(@Headers("authorization") auth?: string) { return this.social.myAnalytics(auth); }
+
   @Get("creators/:handle")
   publicProfile(@Param("handle") handle: string, @Headers("authorization") auth?: string) { return this.social.publicProfile(handle, auth); }
 
