@@ -95,6 +95,7 @@ model User {
   cartItems       CartItem[]
   wishlistItems   WishlistItem[]
   orders          Order[]
+  returnRequests  ReturnRequest[]
   adminPermissions AdminPermission[]
   adminAuditLogs  AdminAuditLog[]
   createdAt       DateTime       @default(now())
