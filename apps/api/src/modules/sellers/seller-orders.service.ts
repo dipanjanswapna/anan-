@@ -165,4 +165,76 @@ export class SellerOrdersService {
     }, { isolationLevel: "Serializable" });
     return { shipment: result };
   }
+
+  async listReturnRequests(authorization?: string) {
+    const { seller } = await this.sellerContext(authorization);
+    const requests = await this.prisma.returnRequest.findMany({
+      where: { sellerOrder: { sellerId: seller.id } },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        customer: { select: { name: true, phone: true } },
+        sellerOrder: {
+          select: {
+            id: true, status: true, orderId: true,
+            items: { select: { id: true, productNameEn: true, productNameBn: true, quantity: true } },
+            order: { select: { createdAt: true } },
+          },
+        },
+      },
+    });
+    return { requests };
+  }
+
+  async reviewReturnRequest(
+    authorization: string | undefined,
+    returnRequestId: string,
+    input: { decision: "APPROVED" | "REJECTED"; notes?: string },
+  ) {
+    const { seller, userId } = await this.sellerContext(authorization);
+    const notes = typeof input.notes === "string" ? input.notes.trim() : "";
+    if (notes.length > 1000) throw new ConflictException("Seller notes must be 1,000 characters or fewer.");
+    if (input.decision !== "APPROVED" && input.decision !== "REJECTED") {
+      throw new ConflictException("Choose approve or reject for this return request.");
+    }
+    return this.prisma.$transaction(async (tx) => {
+      const request = await tx.returnRequest.findFirst({
+        where: { id: returnRequestId, sellerOrder: { sellerId: seller.id } },
+        include: { sellerOrder: { select: { orderId: true, status: true } } },
+      });
+      if (!request) throw new NotFoundException("Return request not found.");
+      if (request.status !== "REQUESTED") throw new ConflictException("This return request has already been reviewed.");
+      if (request.sellerOrder.status !== "DELIVERED") {
+        throw new ConflictException("Only delivered seller orders can be reviewed for return.");
+      }
+      const reviewedAt = new Date();
+      const updated = await tx.returnRequest.update({
+        where: { id: request.id },
+        data: { status: input.decision, sellerNotes: notes || null, reviewedAt },
+      });
+      await tx.orderEvent.create({
+        data: {
+          orderId: request.sellerOrder.orderId,
+          actorUserId: userId,
+          actorRole: "SELLER",
+          eventType: input.decision === "APPROVED" ? "SELLER_RETURN_APPROVED" : "SELLER_RETURN_REJECTED",
+          note: notes || (input.decision === "APPROVED" ? "Seller approved the return request." : "Seller rejected the return request."),
+          metadata: { returnRequestId: request.id, sellerOrderId: request.sellerOrderId, decision: input.decision },
+        },
+      });
+      if (input.decision === "REJECTED") {
+        await tx.adminNotification.create({
+          data: {
+            type: "RETURN_REJECTED",
+            title: "Seller rejected a return request",
+            message: `Seller ${seller.storeName} rejected return request ${request.id}. Admin review may be required.`,
+            targetType: "RETURN_REQUEST",
+            targetId: request.id,
+            dedupeKey: `return-rejected:${request.id}`,
+          },
+        });
+      }
+      return { returnRequest: updated, message: input.decision === "APPROVED" ? "Return request approved. Refund and pickup are not initiated." : "Return request rejected and flagged for admin oversight." };
+    }, { isolationLevel: "Serializable" });
+  }
 }

@@ -5,6 +5,12 @@ import { SellerOrdersService } from "./seller-orders.service";
 export class SellerOrdersController {
   constructor(private readonly orders: SellerOrdersService) {}
 
+  @Get("returns")
+  listReturnRequests(@Headers("authorization") authorization?: string) { return this.orders.listReturnRequests(authorization); }
+
+  @Patch("returns/:id")
+  reviewReturnRequest(@Headers("authorization") authorization: string | undefined, @Param("id") id: string, @Body() input: { decision: "APPROVED" | "REJECTED"; notes?: string }) { return this.orders.reviewReturnRequest(authorization, id, input); }
+
   @Get("dashboard")
   dashboard(@Headers("authorization") authorization?: string) {
     return this.orders.dashboard(authorization);
