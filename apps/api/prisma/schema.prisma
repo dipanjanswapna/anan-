@@ -97,6 +97,8 @@ model User {
   phoneVerifiedAt DateTime?
   sellerProfile   SellerProfile?
   creatorProfile  CreatorProfile?
+  socialReports   SocialPostReport[]
+  creatorBlocks   CreatorBlock[]
   sessions        CustomerSession[]
   addresses       CustomerAddress[]
   cartItems       CartItem[]
@@ -488,6 +490,23 @@ enum SocialPostStatus {
   HIDDEN
 }
 
+enum SocialReportReason {
+  SPAM
+  HARASSMENT
+  HATE
+  VIOLENCE
+  SEXUAL_CONTENT
+  MISINFORMATION
+  COPYRIGHT
+  OTHER
+}
+
+enum SocialReportStatus {
+  OPEN
+  DISMISSED
+  ACTION_TAKEN
+}
+
 model CreatorProfile {
   id          String       @id @default(cuid())
   userId      String       @unique
@@ -497,6 +516,7 @@ model CreatorProfile {
   avatarUrl   String?
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   posts       SocialPost[]
+  blocks      CreatorBlock[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -514,9 +534,43 @@ model SocialPost {
   reviewedAt       DateTime?
   reviewedByUserId String?
   creator          CreatorProfile   @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  reports          SocialPostReport[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
   @@index([status, createdAt])
   @@index([creatorProfileId, status, createdAt])
+}
+
+
+model SocialPostReport {
+  id             String             @id @default(cuid())
+  postId         String
+  reporterUserId String
+  reason         SocialReportReason
+  details        String?
+  status         SocialReportStatus @default(OPEN)
+  reviewNotes    String?
+  reviewedByUserId String?
+  reviewedAt     DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  post           SocialPost         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter       User               @relation(fields: [reporterUserId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, reporterUserId])
+  @@index([status, createdAt])
+  @@index([reporterUserId, createdAt])
+}
+
+model CreatorBlock {
+  id               String        @id @default(cuid())
+  blockerUserId    String
+  creatorProfileId String
+  createdAt        DateTime      @default(now())
+  blocker          User          @relation(fields: [blockerUserId], references: [id], onDelete: Cascade)
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerUserId, creatorProfileId])
+  @@index([creatorProfileId, createdAt])
 }
