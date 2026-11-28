@@ -1,10 +1,20 @@
 import { Body, Controller, Delete, Get, Headers, Param, Patch, Post } from "@nestjs/common";
 import { CartItemDto } from "./dto/cart-item.dto";
 import { CustomerCommerceService } from "./customer-commerce.service";
+import { CheckoutDto } from "./dto/checkout.dto";
 
 @Controller("customers/me")
 export class CustomerCommerceController {
   constructor(private readonly commerce: CustomerCommerceService) {}
+
+  @Post("checkout")
+  checkout(@Headers("authorization") authorization: string | undefined, @Body() input: CheckoutDto) { return this.commerce.checkout(authorization, input); }
+
+  @Get("orders")
+  listOrders(@Headers("authorization") authorization?: string) { return this.commerce.listOrders(authorization); }
+
+  @Get("orders/:id")
+  getOrder(@Headers("authorization") authorization: string | undefined, @Param("id") id: string) { return this.commerce.getOrder(authorization, id); }
 
   @Get("cart")
   getCart(@Headers("authorization") authorization?: string) { return this.commerce.getCart(authorization); }
