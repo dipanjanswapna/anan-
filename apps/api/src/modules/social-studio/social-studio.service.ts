@@ -359,6 +359,46 @@ export class SocialStudioService {
     return { following: false, handle: handle.toLowerCase() };
   }
 
+  async myAnalytics(authorization?: string) {
+    const userId = await this.userContext(authorization);
+    const creator = await this.prisma.creatorProfile.findUnique({
+      where: { userId },
+      select: { id: true, handle: true, displayName: true, createdAt: true },
+    });
+    if (!creator) throw new NotFoundException("Create your Creator Profile to view analytics.");
+
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [followers, newFollowers, publishedPosts, pendingPosts, rejectedPosts, likes, comments, topPosts] = await Promise.all([
+      this.prisma.creatorFollow.count({ where: { creatorProfileId: creator.id } }),
+      this.prisma.creatorFollow.count({ where: { creatorProfileId: creator.id, createdAt: { gte: since } } }),
+      this.prisma.socialPost.count({ where: { creatorProfileId: creator.id, status: "PUBLISHED" } }),
+      this.prisma.socialPost.count({ where: { creatorProfileId: creator.id, status: "PENDING_REVIEW" } }),
+      this.prisma.socialPost.count({ where: { creatorProfileId: creator.id, status: "REJECTED" } }),
+      this.prisma.socialPostLike.count({ where: { post: { creatorProfileId: creator.id, status: "PUBLISHED" }, createdAt: { gte: since } } }),
+      this.prisma.socialPostComment.count({ where: { post: { creatorProfileId: creator.id, status: "PUBLISHED" }, status: "PUBLISHED", createdAt: { gte: since } } }),
+      this.prisma.socialPost.findMany({
+        where: { creatorProfileId: creator.id, status: "PUBLISHED" },
+        orderBy: { createdAt: "desc" }, take: 10,
+        select: { id: true, caption: true, mediaType: true, createdAt: true,
+          _count: { select: { likes: true, comments: { where: { status: "PUBLISHED" } } } } },
+      }),
+    ]);
+
+    const interactions30d = likes + comments;
+    return {
+      creator: { handle: creator.handle, displayName: creator.displayName, memberSince: creator.createdAt },
+      period: { days: 30, since },
+      audience: { followers, newFollowers30d: newFollowers },
+      content: { publishedPosts, pendingPosts, rejectedPosts },
+      engagement: { likes30d: likes, comments30d: comments, interactions30d },
+      topPosts: topPosts.map((post) => ({
+        id: post.id, caption: post.caption, mediaType: post.mediaType, createdAt: post.createdAt,
+        likes: post._count.likes, comments: post._count.comments,
+      })),
+      note: "Reach and impressions are not available because view tracking has not been implemented.",
+    };
+  }
+
   async creatorStats(handle: string, authorization?: string) {
     const creator = await this.prisma.creatorProfile.findFirst({
       where: { handle: handle.toLowerCase(), user: { isActive: true } },
