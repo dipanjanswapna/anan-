@@ -350,3 +350,19 @@ model AdminAuditLog {
   @@index([actorUserId, createdAt])
   @@index([targetType, targetId, createdAt])
 }
+
+
+model AdminNotification {
+  id         String   @id @default(cuid())
+  type       String
+  title      String
+  message    String
+  targetType String
+  targetId   String
+  dedupeKey  String   @unique
+  readAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([readAt, createdAt])
+  @@index([targetType, targetId])
+}

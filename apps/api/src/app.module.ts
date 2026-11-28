@@ -15,6 +15,7 @@ import { AuthModule } from "./modules/auth/auth.module";
       validationSchema: Joi.object({
         NODE_ENV: Joi.string().valid("development", "test", "production").default("development"),
         PORT: Joi.number().port().default(4000),
+        ORDER_EXPIRY_POLL_INTERVAL_MS: Joi.number().integer().min(10000).max(3600000).default(60000),
         CORS_ORIGINS: Joi.string().default("http://localhost:3000"),
         DATABASE_URL: Joi.string().uri({ scheme: ["postgres", "postgresql"] }).default(
           "postgresql://anan:anan_local_dev@localhost:5432/anan_dev?schema=public",
