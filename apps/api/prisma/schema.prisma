@@ -35,6 +35,34 @@ enum OtpPurpose {
   SELLER_PHONE_VERIFICATION
 }
 
+enum OrderStatus {
+  PENDING_SELLER_ACCEPTANCE
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum SellerOrderStatus {
+  PENDING_ACCEPTANCE
+  ACCEPTED
+  REJECTED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
 enum ProductStatus {
   DRAFT
   PENDING_APPROVAL
@@ -58,6 +86,7 @@ model User {
   addresses       CustomerAddress[]
   cartItems       CartItem[]
   wishlistItems   WishlistItem[]
+  orders          Order[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -107,6 +136,7 @@ model SellerProfile {
   verificationNotes String?
   user              User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   products          Product[]
+  orders             SellerOrder[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -178,6 +208,7 @@ model Product {
   updatedAt            DateTime      @updatedAt
   cartItems             CartItem[]
   wishlistItems         WishlistItem[]
+  orderItems            OrderItem[]
 
   @@index([sellerId, status, createdAt])
   @@index([categoryId, status])
@@ -208,4 +239,63 @@ model WishlistItem {
 
   @@unique([userId, productId])
   @@index([userId, createdAt])
+}
+
+
+model Order {
+  id                String        @id @default(cuid())
+  userId            String
+  idempotencyKey    String
+  status            OrderStatus   @default(PENDING_SELLER_ACCEPTANCE)
+  paymentMethod     PaymentMethod @default(CASH_ON_DELIVERY)
+  paymentStatus     PaymentStatus @default(UNPAID)
+  subtotalPaisa     BigInt
+  deliveryFeePaisa  BigInt        @default(0)
+  totalPaisa        BigInt
+  addressSnapshot   Json
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sellerOrders      SellerOrder[]
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model SellerOrder {
+  id                String            @id @default(cuid())
+  orderId           String
+  sellerId          String
+  status            SellerOrderStatus @default(PENDING_ACCEPTANCE)
+  subtotalPaisa     BigInt
+  deliveryFeePaisa  BigInt            @default(0)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  order             Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  seller            SellerProfile     @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  items             OrderItem[]
+
+  @@unique([orderId, sellerId])
+  @@index([sellerId, status, createdAt])
+}
+
+model OrderItem {
+  id                String      @id @default(cuid())
+  orderId           String
+  sellerOrderId     String
+  productId         String
+  productNameEn     String
+  productNameBn     String?
+  quantity          Int
+  unitPricePaisa    BigInt
+  lineTotalPaisa    BigInt
+  createdAt         DateTime    @default(now())
+  order             Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  sellerOrder       SellerOrder @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
+  product           Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([sellerOrderId])
+  @@index([productId])
 }
