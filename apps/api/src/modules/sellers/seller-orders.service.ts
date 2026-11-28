@@ -87,9 +87,6 @@ export class SellerOrdersService {
       message: result.expired ? "The 24-hour acceptance window expired. The order was cancelled and stock restored." : action === "accept" ? "Order accepted." : "Order rejected and stock restored.",
     };
   }
-}
-
- 
   async upsertShipment(authorization: string | undefined, sellerOrderId: string, input: { courierName: string; trackingNumber: string; trackingUrl?: string; estimatedDeliveryAt?: string }) {
     const { seller, userId } = await this.sellerContext(authorization);
     const order = await this.prisma.sellerOrder.findFirst({
@@ -103,6 +100,7 @@ export class SellerOrdersService {
     const courierName = input.courierName.trim();
     const trackingNumber = input.trackingNumber.trim();
     if (!courierName || !trackingNumber) throw new ConflictException("Courier name and tracking number are required.");
+    if (input.trackingUrl) { const parsed = new URL(input.trackingUrl); if (parsed.protocol !== "https:") throw new ConflictException("Tracking URL must use HTTPS."); }
     const estimatedDeliveryAt = input.estimatedDeliveryAt ? new Date(input.estimatedDeliveryAt) : undefined;
     if (estimatedDeliveryAt && Number.isNaN(estimatedDeliveryAt.getTime())) throw new ConflictException("Estimated delivery date is invalid.");
     return this.prisma.$transaction(async (tx) => {
