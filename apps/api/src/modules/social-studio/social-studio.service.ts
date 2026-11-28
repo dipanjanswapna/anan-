@@ -85,16 +85,8 @@ export class SocialStudioService {
   }
 
   async createPost(authorization: string | undefined, input: CreateSocialPostDto) {
-    const userId = await this.userContext(authorization);
-    const creator = await this.prisma.creatorProfile.findUnique({ where: { userId }, select: { id: true } });
-    if (!creator) throw new BadRequestException("Create your Creator Profile before publishing a post.");
-    let url: URL;
-    try { url = new URL(input.mediaUrl); } catch { throw new BadRequestException("Media must use a valid HTTPS URL."); }
-    if (url.protocol !== "https:" || url.username || url.password) throw new BadRequestException("Media must use a valid HTTPS URL.");
-    return this.prisma.socialPost.create({ data: {
-      creatorProfileId: creator.id, mediaType: input.mediaType, mediaUrl: url.toString(),
-      caption: input.caption?.trim(), status: "DRAFT",
-    } });
+    void authorization; void input;
+    throw new BadRequestException("External media URLs are disabled. Upload media through the controlled Creator Studio upload flow.");
   }
 
   async submitPost(authorization: string | undefined, id: string) {
