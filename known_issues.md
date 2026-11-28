@@ -152,3 +152,11 @@ Retain a short resolved entry with issue, former severity, PR/commit, tests/CI e
 - **Impact:** MIME/size/HEAD verification does not detect malware, spoofed media, unsafe visual/audio content or malicious payloads. No decoding/re-encoding, EXIF removal, codec/duration inspection, transcoding, quarantine-to-approved promotion, private delivery guarantee, quotas or orphan cleanup exists. If the configured bucket/CDN exposes the quarantine prefix, an uploaded object may be directly reachable even while its post is not published in ANAN feeds.
 - **Action:** Configure a private quarantine origin, implement malware/content scanning and media normalization, enforce video duration/codec, promote only approved assets to a separately controlled delivery origin, add quotas/rate limits/orphan cleanup, then complete security and integration testing.
 - **State:** Partial implementation on PR #29 branch; not merged/deployed; CI run 46140234885 pending at documentation update.
+
+
+### P2 — Social creator blocking is a first-pass viewer control
+- **Area:** Social Studio / Creator safety.
+- **Evidence:** PR #29 adds persisted block-status lookup, reload-safe Block/Unblock UI, authenticated creator storefront hiding for the blocker, and public-feed filtering.
+- **Impact:** This is not a platform-wide moderation ban. It does not stop the blocked creator from posting, contacting users outside this feature, or viewing public content while signed out/using another account. Appeals, evidence retention, rate limits and safety operations remain incomplete.
+- **Action:** Keep block semantics scoped and explicit; add integration tests, report escalation, abuse controls and staffed moderation before public launch.
+- **State:** Partial implementation on PR #29; CI pending.
