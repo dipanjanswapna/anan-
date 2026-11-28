@@ -122,7 +122,7 @@ export class SocialStudioService {
   }
 
   private async feedViewer(authorization?: string) {
-    const match = authorization?.match(/^Bearer\\s+([A-Za-z0-9_-]{40,})$/i);
+    const match = authorization?.match(/^Bearer\s+([A-Za-z0-9_-]{40,})$/i);
     if (!match) return null;
     const session = await this.prisma.customerSession.findFirst({
       where: { tokenHash: sha256(match[1]), revokedAt: null, expiresAt: { gt: new Date() }, user: { isActive: true } },
@@ -371,7 +371,7 @@ export class SocialStudioService {
   }
 
   private async optionalUserId(authorization?: string): Promise<string | null> {
-    const match = authorization?.match(/^Bearer\\s+([A-Za-z0-9_-]{40,})$/i);
+    const match = authorization?.match(/^Bearer\s+([A-Za-z0-9_-]{40,})$/i);
     if (!match) return null;
     const session = await this.prisma.customerSession.findFirst({
       where: { tokenHash: sha256(match[1]), revokedAt: null, expiresAt: { gt: new Date() }, user: { isActive: true } },
