@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 
 type Order = { id: string; status: string; paymentMethod: string; paymentStatus: string; totalPaisa: string; createdAt: string; sellerOrders: Array<{ id: string; status: string; subtotalPaisa: string; items: Array<{ id: string; productNameEn: string; quantity: number }> }> };
 const money = (paisa: string) => { const value = BigInt(paisa); const whole = new Intl.NumberFormat("en-BD").format(value / 100n); const fraction = (value % 100n).toString().padStart(2, "0").replace(/0+$/, ""); return `৳${whole}${fraction ? `.${fraction}` : ""}`; };
-export function CustomerOrders() {\n  const [busyOrder, setBusyOrder] = useState("");
+export function CustomerOrders() {
+  const [busyOrder, setBusyOrder] = useState("");
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
