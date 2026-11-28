@@ -165,3 +165,4 @@ export class SellerOrdersService {
     }, { isolationLevel: "Serializable" });
     return { shipment: result };
   }
+}
