@@ -42,3 +42,12 @@ See [`handoff.md`](./handoff.md) for commands run, results, pending work and the
 - Homepage hero carousel, premium cards, quick view, rebuilt product detail, sign up/admin login, cart, checkout, account, orders and wishlist are implemented.
 - Verified in a real browser against local PostgreSQL: signup, cart math, COD order, wishlist, filters, seller sign-in/list, admin sign-in and product approval; 60 viewport checks showed no horizontal overflow.
 - Blocking: no baseline migration, so fresh `migrate deploy` fails; seller product create/edit and automated tests remain unverified.
+
+
+## Current main correction — 2026-11-28
+
+The historical snapshot above is stale. Current main includes merged PR #29 Social Studio and PR #34 S3 SigV4 correction. Social Studio is implemented but not production-ready: quarantine uploads have no malware scan/sanitization/promotion pipeline, 18+ remains disabled, and moderation operations still need appeals/evidence/escalation/staffing.
+
+The P0 database blocker remains: first migration `20261128000000_customer_orders` references foundational `User`, `SellerProfile`, and `Product` tables without creating them; no earlier baseline is present. Follow `docs/database/migration-baseline-remediation.md`. Do not assume clean-database migration works or modify shared DB migration state without backup and schema comparison.
+
+PR #34 merged as `6aad3fb40eeb89270c494ccd4b5d593e3df99bca`; latest-head CI run `46154036981` passed build/schema/Compose checks, not live S3 or migration replay.

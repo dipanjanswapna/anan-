@@ -191,3 +191,33 @@ CI evidence: run 46144307456 succeeded for an earlier foundation commit only; it
 - **P1 — Social Trust & Safety operations:** appeals, evidence retention, escalation workflow, staffed response/SLA and IP/device/anonymous abuse controls remain incomplete. 18+ publishing must remain disabled until genuine age assurance exists.
 - **Not verified:** production AWS configuration, production DB migration, browser QA after PR #29 merge, deployment, backups/restore, load testing and security review.
 
+
+
+## Authoritative audit update — 2026-11-28 (after PR #34)
+
+### P0 — Fresh database migration baseline is not established
+- **Area:** Database / release engineering.
+- **Evidence:** The current `apps/api/prisma/migrations/` directory starts with `20261128000000_customer_orders`. Its SQL creates `Order`, `SellerOrder` and `OrderItem`, then adds foreign keys referencing `User`, `SellerProfile` and `Product`; those foundational tables are not created by that migration. No earlier baseline migration exists in the checked-in directory.
+- **Impact:** A clean database cannot be assumed to initialize with `prisma migrate deploy`. Local `db push` or Prisma schema validation does not validate the migration chain. This blocks safe production database provisioning until proven fixed.
+- **Action:** Follow `docs/database/migration-baseline-remediation.md`: inventory all environment histories, reconstruct the historical pre-order schema, author a reviewed compatible baseline strategy, test full replay on disposable PostgreSQL, and rehearse any existing-database adoption on a verified backup copy.
+- **Safety:** Do not reset a shared database, use `db push` as a migration fix, or mark migrations applied without schema equivalence evidence and a verified backup.
+- **State:** Open; blocking; no database was changed in this audit.
+
+### P1 — Social Studio media remains quarantine-only
+- **Area:** Social Studio / user-generated content.
+- **Evidence:** PR #29 is merged to main. Upload uses presigned S3 PUT and signed HEAD metadata verification. PR #34 corrected SigV4 canonical-request construction and signed Content-Type. No live private-bucket PUT/HEAD test is recorded.
+- **Impact:** MIME/size/HEAD checks are not magic-byte validation, malware scanning, image decoding/re-encoding, EXIF stripping, video codec/duration validation or private delivery. Admin publication fails closed while media remains under `social/quarantine/`; without a promotion pipeline, these uploaded posts cannot complete publication.
+- **Action:** Keep quarantine private; add isolated content inspection/sanitization, video validation/transcoding, scanner verdict handling, approved-object promotion and private delivery. Add automated signing tests and live sandbox S3 tests before claiming storage readiness.
+- **State:** Open; implementation partial; production use blocked.
+
+### P1 — Social Studio trust/safety operations are incomplete
+- **Area:** Social Studio / UGC operations.
+- **Evidence:** Creator profiles, single-media posts, reports, blocks, moderation, engagement, feeds, rate-limit buckets and initial analytics are merged. No genuine age assurance, appeals/evidence retention, escalation/staffed moderation SLA or IP/device edge throttling is verified.
+- **Impact:** Feature primitives do not constitute an operationally safe public UGC service.
+- **Action:** Keep 18+ disabled; define moderation policy, appeal and evidence retention workflow, escalation and staffing, abuse controls and measurable incident response before public launch.
+- **State:** Open; non-production-ready.
+
+### Verified merge record
+- PR #34 S3 SigV4 fix merged to main as `6aad3fb40eeb89270c494ccd4b5d593e3df99bca`.
+- The PR's latest-head GitHub Actions checks passed: Prisma validation/client generation, API build, Web typecheck/build, Compose validation and dev image build.
+- This CI evidence does not prove live S3 compatibility or resolve the migration baseline.

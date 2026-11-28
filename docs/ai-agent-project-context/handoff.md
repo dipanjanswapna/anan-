@@ -76,3 +76,15 @@ Screenshots for the review are in `artifacts/` (untracked, review-only; see `.gi
 3. Add integration tests for cart totals, checkout idempotency, order cancellation and admin review permissions.
 4. Add MFA and permission management for Admin accounts; add resend/attempt metrics for OTP abuse controls.
 5. Replace placeholder catalogue imagery with real seller uploads and DTO-driven media URLs.
+
+
+## Follow-up handoff — 2026-11-28 (after PR #34)
+
+- Current main HEAD: `6aad3fb40eeb89270c494ccd4b5d593e3df99bca`.
+- PR #34 S3 SigV4 correction is merged. Latest-head CI run `46154036981` passed Prisma validation/client generation, API build, Web typecheck/build, Compose validation and development image build.
+- The S3 correction has not been tested against a real private bucket. Do not claim live PUT/HEAD success.
+- Social Studio is merged, but upload is still quarantine-only. There is no scanner, file decode/re-encode, EXIF stripping, video validation/transcoding, approved-object promotion or proven private delivery. The Admin guard intentionally prevents publishing a quarantine URL. Keep quarantine private and 18+ disabled.
+- P0: migration history starts with `20261128000000_customer_orders`, which references foundational `User`, `SellerProfile`, and `Product` tables without creating them. No earlier baseline migration exists.
+- A safety runbook was added at `docs/database/migration-baseline-remediation.md`. It deliberately does not prescribe destructive commands against real environments. First inventory every environment's migration history, reconstruct the historical pre-order schema, review SQL, then test empty-DB replay and existing-DB adoption on disposable/backup copies.
+- No database was reset, migrated or marked applied in this follow-up. No production environment was modified.
+- Next task: use a local workspace with pnpm/Prisma/PostgreSQL to reconstruct and generate the historically correct foundational migration, then add a disposable-PostgreSQL CI migration replay. Do not fabricate the SQL from today's full schema: later migrations already create many current models/columns and would conflict.
