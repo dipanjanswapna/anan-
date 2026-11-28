@@ -62,7 +62,7 @@ export function CustomerAccount() {
     setSavingProfile(true); setError(""); setNotice("");
     try {
       const response = await fetch("/api/account/me", {
-        method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(profileForm),
+        method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name: profileForm.name, ...(profileForm.email.trim() ? { email: profileForm.email.trim() } : {}) }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to update profile.");
@@ -131,7 +131,7 @@ export function CustomerAccount() {
           <section className="h-fit rounded-2xl border border-[#eee8f4] bg-white p-5 shadow-[0_8px_30px_rgba(42,24,68,.04)] sm:p-6">
             <div className="mb-5 flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-700"><UserRound size={19}/></span><div><h2 className="font-bold text-[#302344]">Personal information</h2><p className="text-xs text-[#958ba2]">Your customer profile</p></div></div>
             <form onSubmit={saveProfile} className="space-y-4">
-              <div><label className={labelClass}>Full name</label><input className={fieldClass} value={profileForm.name} onChange={e => setProfileForm(v => ({ ...v, name: e.target.value }))} placeholder="Your name" minLength={2} maxLength={100}/></div>
+              <div><label className={labelClass}>Full name</label><input className={fieldClass} required minLength={2} maxLength={100} value={profileForm.name} onChange={e => setProfileForm(v => ({ ...v, name: e.target.value }))} placeholder="Your name" minLength={2} maxLength={100}/></div>
               <div><label className={labelClass}>Email address</label><input type="email" className={fieldClass} value={profileForm.email} onChange={e => setProfileForm(v => ({ ...v, email: e.target.value }))} placeholder="you@example.com"/></div>
               <div><label className={labelClass}>Verified mobile number</label><input className={fieldClass + " bg-[#faf9fc] text-[#8c8298]"} value={profile.phone ?? ""} readOnly/><p className="mt-1 text-[11px] text-[#958ba2]">Change of mobile number requires a separate verification flow.</p></div>
               <button disabled={savingProfile} className="w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-700 disabled:opacity-60">{savingProfile ? "Saving…" : "Save profile"}</button>
