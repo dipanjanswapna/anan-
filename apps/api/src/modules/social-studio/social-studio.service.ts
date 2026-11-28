@@ -274,4 +274,158 @@ export class SocialStudioService {
     });
   }
 
+
+  async followCreator(authorization: string | undefined, handle: string) {
+    const followerUserId = await this.userContext(authorization);
+    const creator = await this.prisma.creatorProfile.findFirst({ where: { handle: handle.toLowerCase(), user: { isActive: true } }, select: { id: true, userId: true, displayName: true } });
+    if (!creator) throw new NotFoundException("Creator not found.");
+    if (creator.userId === followerUserId) throw new BadRequestException("You cannot follow yourself.");
+    await this.prisma.$transaction(async (tx) => {
+      await tx.creatorFollow.upsert({
+        where: { followerUserId_creatorProfileId: { followerUserId, creatorProfileId: creator.id } },
+        create: { followerUserId, creatorProfileId: creator.id }, update: {},
+      });
+      await tx.socialNotification.create({ data: {
+        recipientUserId: creator.userId, actorUserId: followerUserId, type: "NEW_FOLLOW",
+        message: "Someone started following your creator profile.",
+      } });
+    });
+    return { following: true, handle: handle.toLowerCase() };
+  }
+
+  async unfollowCreator(authorization: string | undefined, handle: string) {
+    const followerUserId = await this.userContext(authorization);
+    const creator = await this.prisma.creatorProfile.findUnique({ where: { handle: handle.toLowerCase() }, select: { id: true } });
+    if (!creator) return { following: false, handle: handle.toLowerCase() };
+    await this.prisma.creatorFollow.deleteMany({ where: { followerUserId, creatorProfileId: creator.id } });
+    return { following: false, handle: handle.toLowerCase() };
+  }
+
+  async creatorStats(handle: string, authorization?: string) {
+    const creator = await this.prisma.creatorProfile.findFirst({
+      where: { handle: handle.toLowerCase(), user: { isActive: true } },
+      select: { id: true, userId: true, handle: true, displayName: true, _count: { select: { followers: true, posts: true } } },
+    });
+    if (!creator) throw new NotFoundException("Creator not found.");
+    const [publishedPosts, likes, following] = await Promise.all([
+      this.prisma.socialPost.count({ where: { creatorProfileId: creator.id, status: "PUBLISHED" } }),
+      this.prisma.socialPostLike.count({ where: { post: { creatorProfileId: creator.id, status: "PUBLISHED" } } }),
+      this.optionalUserId(authorization).then((userId) => userId ? this.prisma.creatorFollow.findUnique({ where: { followerUserId_creatorProfileId: { followerUserId: userId, creatorProfileId: creator.id } }, select: { id: true } }) : null),
+    ]);
+    return { handle: creator.handle, displayName: creator.displayName, followers: creator._count.followers, publishedPosts, likes, following: Boolean(following) };
+  }
+
+  private async optionalUserId(authorization?: string): Promise<string | null> {
+    const match = authorization?.match(/^Bearer\\s+([A-Za-z0-9_-]{40,})$/i);
+    if (!match) return null;
+    const session = await this.prisma.customerSession.findFirst({
+      where: { tokenHash: sha256(match[1]), revokedAt: null, expiresAt: { gt: new Date() }, user: { isActive: true } },
+      select: { userId: true },
+    });
+    return session?.userId ?? null;
+  }
+
+  async toggleLike(authorization: string | undefined, postId: string) {
+    const userId = await this.userContext(authorization);
+    const post = await this.prisma.socialPost.findFirst({ where: { id: postId, status: "PUBLISHED", creator: { user: { isActive: true } } }, select: { id: true, creator: { select: { userId: true } } } });
+    if (!post) throw new NotFoundException("Published post not found.");
+    const existing = await this.prisma.socialPostLike.findUnique({ where: { userId_postId: { userId, postId } }, select: { id: true } });
+    if (existing) {
+      await this.prisma.socialPostLike.delete({ where: { id: existing.id } });
+      return { liked: false, likes: await this.prisma.socialPostLike.count({ where: { postId } }) };
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.socialPostLike.create({ data: { userId, postId } });
+      if (post.creator.userId !== userId) await tx.socialNotification.create({ data: {
+        recipientUserId: post.creator.userId, actorUserId: userId, postId, type: "POST_LIKE", message: "Someone liked your post.",
+      } });
+    });
+    return { liked: true, likes: await this.prisma.socialPostLike.count({ where: { postId } }) };
+  }
+
+  async createComment(authorization: string | undefined, postId: string, input: { body: string }) {
+    const userId = await this.userContext(authorization);
+    const post = await this.prisma.socialPost.findFirst({ where: { id: postId, status: "PUBLISHED", creator: { user: { isActive: true } } }, select: { id: true } });
+    if (!post) throw new NotFoundException("Published post not found.");
+    const body = input.body.trim();
+    if (!body || body.length > 1000) throw new BadRequestException("Comment must be between 1 and 1000 characters.");
+    return this.prisma.socialPostComment.create({
+      data: { userId, postId, body, status: "PENDING_REVIEW" },
+      select: { id: true, body: true, status: true, createdAt: true },
+    });
+  }
+
+  async publicComments(postId: string, limit?: string) {
+    const parsed = Number(limit ?? 30);
+    const take = Number.isInteger(parsed) ? Math.min(50, Math.max(1, parsed)) : 30;
+    const post = await this.prisma.socialPost.findFirst({ where: { id: postId, status: "PUBLISHED", creator: { user: { isActive: true } } }, select: { id: true } });
+    if (!post) throw new NotFoundException("Published post not found.");
+    return this.prisma.socialPostComment.findMany({
+      where: { postId, status: "PUBLISHED", user: { isActive: true } }, orderBy: { createdAt: "asc" }, take,
+      select: { id: true, body: true, createdAt: true, user: { select: { name: true } } },
+    });
+  }
+
+  async reviewComment(authorization: string | undefined, id: string, input: { action: "APPROVE" | "HIDE" | "REMOVE"; notes?: string }) {
+    const adminUserId = await this.adminContext(authorization);
+    const status = input.action === "APPROVE" ? "PUBLISHED" : input.action === "HIDE" ? "HIDDEN" : "REMOVED";
+    return this.prisma.$transaction(async (tx) => {
+      const comment = await tx.socialPostComment.findUnique({ where: { id }, select: { id: true, status: true, post: { select: { creator: { select: { userId: true } } } } } });
+      if (!comment) throw new NotFoundException("Comment not found.");
+      if (comment.status !== "PENDING_REVIEW") throw new ConflictException("Only pending comments can be reviewed.");
+      const updated = await tx.socialPostComment.update({ where: { id }, data: { status, moderationNote: input.notes?.trim() || null, reviewedAt: new Date(), reviewedByUserId: adminUserId }, select: { id: true, status: true, reviewedAt: true } });
+      if (status === "PUBLISHED") await tx.socialNotification.create({ data: { recipientUserId: comment.post.creator.userId, actorUserId: adminUserId, type: "NEW_COMMENT", message: "A new comment on your post was approved." } });
+      await tx.adminAuditLog.create({ data: { actorUserId: adminUserId, action: "SOCIAL_COMMENT_" + input.action, targetType: "SocialPostComment", targetId: id, metadata: { notes: input.notes?.trim() || null } } });
+      return updated;
+    });
+  }
+
+  async toggleSave(authorization: string | undefined, postId: string) {
+    const userId = await this.userContext(authorization);
+    const post = await this.prisma.socialPost.findFirst({ where: { id: postId, status: "PUBLISHED", creator: { user: { isActive: true } } }, select: { id: true } });
+    if (!post) throw new NotFoundException("Published post not found.");
+    const existing = await this.prisma.socialPostSave.findUnique({ where: { userId_postId: { userId, postId } }, select: { id: true } });
+    if (existing) {
+      await this.prisma.socialPostSave.delete({ where: { id: existing.id } });
+      return { saved: false };
+    }
+    await this.prisma.socialPostSave.create({ data: { userId, postId } });
+    return { saved: true };
+  }
+
+  async savedPosts(authorization: string | undefined) {
+    const userId = await this.userContext(authorization);
+    return this.prisma.socialPostSave.findMany({
+      where: { userId, post: { status: "PUBLISHED", creator: { user: { isActive: true } } } },
+      orderBy: { createdAt: "desc" }, take: 100,
+      select: { createdAt: true, post: { select: { id: true, mediaType: true, mediaUrl: true, caption: true, createdAt: true, creator: { select: { handle: true, displayName: true, avatarUrl: true } } } } },
+    });
+  }
+
+  async notifications(authorization: string | undefined) {
+    const userId = await this.userContext(authorization);
+    return this.prisma.socialNotification.findMany({
+      where: { recipientUserId: userId }, orderBy: { createdAt: "desc" }, take: 50,
+      select: { id: true, type: true, message: true, readAt: true, createdAt: true, actor: { select: { name: true } }, post: { select: { id: true } } },
+    });
+  }
+
+  async markNotificationRead(authorization: string | undefined, id: string) {
+    const userId = await this.userContext(authorization);
+    const result = await this.prisma.socialNotification.updateMany({ where: { id, recipientUserId: userId, readAt: null }, data: { readAt: new Date() } });
+    if (!result.count) {
+      const exists = await this.prisma.socialNotification.findFirst({ where: { id, recipientUserId: userId }, select: { id: true } });
+      if (!exists) throw new NotFoundException("Notification not found.");
+    }
+    return { read: true };
+  }
+
+  async adminCommentQueue(authorization: string | undefined) {
+    await this.adminContext(authorization);
+    return this.prisma.socialPostComment.findMany({
+      where: { status: "PENDING_REVIEW" }, orderBy: { createdAt: "asc" }, take: 100,
+      select: { id: true, body: true, createdAt: true, user: { select: { name: true } }, post: { select: { id: true, caption: true, creator: { select: { handle: true } } } } },
+    });
+  }
+
 }
