@@ -14,6 +14,7 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
   if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "POST") { upstreamPath = "/creators/" + path[1] + "/block"; protectedRoute = true; }
   if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "GET") { upstreamPath = "/creators/" + path[1] + "/block-status"; protectedRoute = true; }
   if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "PATCH") { upstreamPath = "/creators/" + path[1] + "/unblock"; protectedRoute = true; }
+  if (key === "me/blocks" && method === "GET") { upstreamPath = "/creators/me/blocks"; protectedRoute = true; }
   if (key === "me/profile" && ["GET", "POST"].includes(method)) { upstreamPath = "/creators/me/profile"; protectedRoute = true; }
   if (key === "me/posts" && ["GET", "POST"].includes(method)) { upstreamPath = "/creators/me/posts"; protectedRoute = true; }
   if (path.length === 3 && path[0] === "me" && path[1] === "posts" && ["upload", "complete"].includes(path[2]) && method === "POST") { upstreamPath = "/creators/me/posts/" + path[2]; protectedRoute = true; }
