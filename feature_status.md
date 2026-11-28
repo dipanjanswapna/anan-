@@ -4,7 +4,7 @@
 
 ## Snapshot
 - Repository: `dipanjanswapna/anan-`; branch: `main`.
-- Main HEAD at snapshot: `718b85f0d03d6c67e80d66d56f7305ff41e64359`.
+- Main HEAD at snapshot: `16da89fbf53e594b1ce08b840ddfcbae285f457f` (after PR #32 brand/UI refresh merge).
 - Latest feature: PR #27 Product Image Upload & Moderation, merged as `7f27c5d60aabcab442e8262858a1a1f618fbba7a`.
 - PR #27 CI run `46133765708`, job `140944437785`: completed successfully (Prisma validation/generation, API build, Web typecheck/build, Compose validation and dev image build).
 - Stack: pnpm, Next.js 15/React 19, NestJS 10, PostgreSQL 16, Prisma 6, Docker Compose.
@@ -42,7 +42,7 @@
 | Inventory / warehouses | Partial foundation | Stock-on-hand and transactional mutations | Stock ledger, reservation, multiple warehouses/bins/transfers absent. |
 | Finance / commissions / payouts | Planned | Manual refund recording only | Commission ledger, seller balance and payout lifecycle absent. |
 | Coupons / loyalty | Planned | Product decisions only | Coupon engine and points ledger absent. |
-| Social Studio / Creator | Partial (PR in progress) | Creator profile, creator storefront, single IMAGE/VIDEO draft, submit-for-review flow, Admin moderation API/UI, public feed with PUBLISHED-only visibility | External HTTPS media URL only; no upload/scanning, age assurance, reporting/blocking, comments/likes, escalation or analytics. Not merged/deployed. |
+| Social Studio / Creator | Implemented on PR #29 branch; not yet merged | Creator profile/storefront, controlled S3 quarantine upload, moderation, reports/blocks, follow/like/comments/save, notifications, feeds, rate limits and initial analytics | No media scanning/sanitization/promotion, age assurance, appeals/escalation or production storage guarantees; latest-head CI and migration execution still unverified. |
 | Legal / privacy / consent | Planned | No complete versioned acceptance flow verified | Legal documents, consent, export/deletion remain. |
 | Analytics / BI | Planned | No production pipeline verified | Privacy-aware events and separate warehouse remain. |
 | AWS production | Planned / not deployed | Target architecture documented | ECS/RDS/S3/CloudFront/SQS/Terraform, secrets, monitoring, backup/DR not deployed/verified. |
@@ -116,3 +116,10 @@ Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/
 - Read `docs/social-studio.md` for API routes, behavior, storage settings and remaining limitations.
 - Next tasks, in order: (1) synchronize with latest main safely and re-check migration ordering/baseline; (2) add automated unit/integration tests and get latest-head CI green; (3) implement private quarantine + scanner/sanitizer + image re-encode/EXIF stripping + video codec/duration validation/transcoding + approved-object promotion; (4) add view/impression event model and privacy-aware analytics; (5) add appeals/evidence/escalation/retention and operational moderation workflow.
 - Do not merge until PR is current with main, migration chain is reviewed, latest CI is green, security review passes and mergeability is confirmed. Never describe Social Studio as production-ready.
+
+
+## Current verification update (2026-11-28)
+- PR #32 Brand/UI refresh was merged to `main` as `16da89fbf53e594b1ce08b840ddfcbae285f457f`; its CI run `46146817826` completed successfully.
+- Social Studio remains on PR #29 branch and is not merged. The branch has been identified as diverged from current `main`; do not use the old ahead/behind figures above as current status. Synchronize and verify current branch before merge.
+- Social Studio upload is a quarantine-only first step. MIME/size/HEAD checks are not malware scanning or media sanitization. The S3 bucket and any CDN path must keep quarantine objects private. Keep 18+ disabled until age assurance exists.
+- `.env.example` escaped-newline formatting defect was corrected in the current PR branch; re-check CI after branch synchronization.
