@@ -109,11 +109,28 @@ export class SocialStudioService {
     return this.prisma.socialPost.findUnique({ where: { id } });
   }
 
-  async publicFeed(limit?: string) {
+  async publicFeed(limit?: string, authorization?: string) {
     const parsed = Number(limit ?? 20);
     const take = Number.isInteger(parsed) ? Math.min(50, Math.max(1, parsed)) : 20;
+    const match = authorization?.match(/^Bearer\\s+([A-Za-z0-9_-]{40,})$/i);
+    let blockedCreatorIds: string[] = [];
+    if (match) {
+      const session = await this.prisma.customerSession.findFirst({
+        where: { tokenHash: sha256(match[1]), revokedAt: null, expiresAt: { gt: new Date() }, user: { isActive: true } },
+        select: { userId: true },
+      });
+      if (session) {
+        const blocks = await this.prisma.creatorBlock.findMany({
+          where: { blockerUserId: session.userId }, select: { creatorProfileId: true },
+        });
+        blockedCreatorIds = blocks.map((block) => block.creatorProfileId);
+      }
+    }
     return this.prisma.socialPost.findMany({
-      where: { status: "PUBLISHED", creator: { user: { isActive: true } } },
+      where: {
+        status: "PUBLISHED", creator: { user: { isActive: true } },
+        ...(blockedCreatorIds.length ? { creatorProfileId: { notIn: blockedCreatorIds } } : {}),
+      },
       orderBy: { createdAt: "desc" }, take,
       select: { id: true, mediaType: true, mediaUrl: true, caption: true, createdAt: true,
         creator: { select: { handle: true, displayName: true, avatarUrl: true } } },
