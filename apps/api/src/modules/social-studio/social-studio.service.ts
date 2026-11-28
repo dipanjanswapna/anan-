@@ -171,4 +171,90 @@ export class SocialStudioService {
       return updated;
     });
   }
+
+  async reportPost(authorization: string | undefined, postId: string, input: { reason: string; details?: string }) {
+    const reporterUserId = await this.userContext(authorization);
+    const post = await this.prisma.socialPost.findFirst({
+      where: { id: postId, status: "PUBLISHED", creator: { user: { isActive: true } } },
+      select: { id: true, creator: { select: { userId: true } } },
+    });
+    if (!post) throw new NotFoundException("Published post not found.");
+    if (post.creator.userId === reporterUserId) throw new BadRequestException("You cannot report your own post.");
+    try {
+      return await this.prisma.socialPostReport.create({
+        data: { postId, reporterUserId, reason: input.reason as never, details: input.details?.trim() || null },
+        select: { id: true, reason: true, status: true, createdAt: true },
+      });
+    } catch (error) {
+      if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
+        throw new ConflictException("You have already reported this post.");
+      }
+      throw error;
+    }
+  }
+
+  async blockCreator(authorization: string | undefined, handle: string) {
+    const blockerUserId = await this.userContext(authorization);
+    const creator = await this.prisma.creatorProfile.findFirst({
+      where: { handle: handle.toLowerCase(), user: { isActive: true } }, select: { id: true, userId: true },
+    });
+    if (!creator) throw new NotFoundException("Creator not found.");
+    if (creator.userId === blockerUserId) throw new BadRequestException("You cannot block your own creator profile.");
+    await this.prisma.creatorBlock.upsert({
+      where: { blockerUserId_creatorProfileId: { blockerUserId, creatorProfileId: creator.id } },
+      create: { blockerUserId, creatorProfileId: creator.id },
+      update: {},
+    });
+    return { blocked: true, handle: handle.toLowerCase() };
+  }
+
+  async unblockCreator(authorization: string | undefined, handle: string) {
+    const blockerUserId = await this.userContext(authorization);
+    const creator = await this.prisma.creatorProfile.findUnique({ where: { handle: handle.toLowerCase() }, select: { id: true } });
+    if (!creator) return { blocked: false, handle: handle.toLowerCase() };
+    await this.prisma.creatorBlock.deleteMany({ where: { blockerUserId, creatorProfileId: creator.id } });
+    return { blocked: false, handle: handle.toLowerCase() };
+  }
+
+  async moderationReports(authorization: string | undefined, status?: string) {
+    await this.adminContext(authorization);
+    if (status && !["OPEN", "DISMISSED", "ACTION_TAKEN"].includes(status)) throw new BadRequestException("Invalid report status.");
+    return this.prisma.socialPostReport.findMany({
+      where: status ? { status: status as "OPEN" | "DISMISSED" | "ACTION_TAKEN" } : { status: "OPEN" },
+      orderBy: { createdAt: "asc" }, take: 100,
+      select: {
+        id: true, reason: true, details: true, status: true, createdAt: true,
+        post: { select: { id: true, mediaType: true, mediaUrl: true, caption: true, status: true, creator: { select: { handle: true, displayName: true } } } },
+      },
+    });
+  }
+
+  async reviewReport(authorization: string | undefined, id: string, input: { action: "DISMISS" | "HIDE_POST"; notes?: string }) {
+    const adminUserId = await this.adminContext(authorization);
+    return this.prisma.$transaction(async (tx) => {
+      const report = await tx.socialPostReport.findUnique({ where: { id }, select: { id: true, postId: true, status: true } });
+      if (!report) throw new NotFoundException("Report not found.");
+      if (report.status !== "OPEN") throw new ConflictException("This report has already been reviewed.");
+      if (input.action === "HIDE_POST") {
+        await tx.socialPost.updateMany({ where: { id: report.postId, status: "PUBLISHED" }, data: { status: "HIDDEN" } });
+      }
+      const updated = await tx.socialPostReport.update({
+        where: { id },
+        data: {
+          status: input.action === "DISMISS" ? "DISMISSED" : "ACTION_TAKEN",
+          reviewNotes: input.notes?.trim() || null, reviewedByUserId: adminUserId, reviewedAt: new Date(),
+        },
+        select: { id: true, status: true, reviewNotes: true, reviewedAt: true },
+      });
+      await tx.adminAuditLog.create({
+        data: {
+          actorUserId: adminUserId, action: "SOCIAL_REPORT_" + input.action,
+          targetType: "SocialPostReport", targetId: id,
+          metadata: { postId: report.postId, notes: input.notes?.trim() || null },
+        },
+      });
+      return updated;
+    });
+  }
+
 }
