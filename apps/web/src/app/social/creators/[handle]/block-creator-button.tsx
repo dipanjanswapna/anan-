@@ -5,7 +5,16 @@ import { useEffect, useState } from "react";
 export default function BlockCreatorButton({ handle }: { handle: string }) {
   const [blocked, setBlocked] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");\n\n  useEffect(() => {\n    let active = true;\n    fetch(`/api/social/creators/${encodeURIComponent(handle)}`, { cache: "no-store" })\n      .then(async response => { if (!response.ok) throw new Error("Sign in to manage blocked creators."); return response.json(); })\n      .then(data => { if (active) setBlocked(Boolean(data.blocked)); })\n      .catch(() => { if (active) setMessage("Sign in to block or unblock this creator."); });\n    return () => { active = false; };\n  }, [handle]);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/social/creators/${encodeURIComponent(handle)}`, { cache: "no-store" })
+      .then(async response => { if (!response.ok) throw new Error("Sign in to manage blocked creators."); return response.json(); })
+      .then(data => { if (active) setBlocked(Boolean(data.blocked)); })
+      .catch(() => { if (active) setMessage("Sign in to block or unblock this creator."); });
+    return () => { active = false; };
+  }, [handle]);
 
   async function toggle() {
     setBusy(true);
