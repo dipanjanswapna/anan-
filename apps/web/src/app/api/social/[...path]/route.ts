@@ -11,12 +11,12 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
   let protectedRoute = false;
   if (key === "posts" && method === "GET") upstreamPath = "/social/posts";
   if (path.length === 2 && path[0] === "posts" && safeId(path[1]) && method === "POST") { upstreamPath = "/social/posts/" + path[1] + "/report"; protectedRoute = true; }
-  if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "POST") { upstreamPath = "/creators/" + path[1] + "/block"; protectedRoute = true; }
+  if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "POST") { upstreamPath = "/creators/" + path[1] + "/block"; protectedRoute = true; }\n  if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "GET") { upstreamPath = "/creators/" + path[1] + "/block-status"; protectedRoute = true; }
   if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "PATCH") { upstreamPath = "/creators/" + path[1] + "/unblock"; protectedRoute = true; }
   if (key === "me/profile" && ["GET", "POST"].includes(method)) { upstreamPath = "/creators/me/profile"; protectedRoute = true; }
   if (key === "me/posts" && ["GET", "POST"].includes(method)) { upstreamPath = "/creators/me/posts"; protectedRoute = true; }
   if (path.length === 3 && path[0] === "me" && path[1] === "posts" && ["upload", "complete"].includes(path[2]) && method === "POST") { upstreamPath = "/creators/me/posts/" + path[2]; protectedRoute = true; }
-  if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "GET") upstreamPath = "/creators/" + path[1];
+  if (path.length === 2 && path[0] === "creators" && safeId(path[1]) && method === "GET" && !protectedRoute) upstreamPath = "/creators/" + path[1];
   if (path.length === 3 && path[0] === "me" && path[1] === "posts" && safeId(path[2]) && method === "POST") { upstreamPath = "/creators/me/posts/" + path[2] + "/submit"; protectedRoute = true; }
   if (path.length === 2 && path[0] === "admin" && path[1] === "posts" && method === "GET") { upstreamPath = "/admin/social/posts"; protectedRoute = true; }
   if (path.length === 2 && path[0] === "admin" && path[1] === "reports" && method === "GET") { upstreamPath = "/admin/social/reports"; protectedRoute = true; }
