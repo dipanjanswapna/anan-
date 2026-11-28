@@ -7,7 +7,7 @@ export class AdminNotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
   private async authorize(authorization?: string) {
-    const match = authorization?.match(/^Bearer\\s+([A-Za-z0-9_-]{40,})$/i);
+    const match = authorization?.match(/^Bearer\s+([A-Za-z0-9_-]{40,})$/i);
     if (!match) throw new UnauthorizedException("An administrator session is required.");
     const tokenHash = createHash("sha256").update(match[1]).digest("hex");
     const session = await this.prisma.customerSession.findFirst({
