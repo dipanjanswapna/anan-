@@ -60,7 +60,15 @@ export class SocialStudioService {
     }
   }
 
-  async publicProfile(handle: string, authorization?: string) {\n    const match = authorization?.match(/^Bearer\\s+([A-Za-z0-9_-]{40,})$/i);\n    if (match) {\n      const session = await this.prisma.customerSession.findFirst({ where: { tokenHash: sha256(match[1]), revokedAt: null, expiresAt: { gt: new Date() }, user: { isActive: true } }, select: { userId: true } });\n      if (session) {\n        const blocked = await this.prisma.creatorBlock.findFirst({ where: { blockerUserId: session.userId, creator: { handle: handle.toLowerCase() } }, select: { id: true } });\n        if (blocked) throw new NotFoundException("Creator not found.");\n      }\n    }
+  async publicProfile(handle: string, authorization?: string) {
+    const match = authorization?.match(/^Bearer\s+([A-Za-z0-9_-]{40,})$/i);
+    if (match) {
+      const session = await this.prisma.customerSession.findFirst({ where: { tokenHash: sha256(match[1]), revokedAt: null, expiresAt: { gt: new Date() }, user: { isActive: true } }, select: { userId: true } });
+      if (session) {
+        const blocked = await this.prisma.creatorBlock.findFirst({ where: { blockerUserId: session.userId, creator: { handle: handle.toLowerCase() } }, select: { id: true } });
+        if (blocked) throw new NotFoundException("Creator not found.");
+      }
+    }
     const profile = await this.prisma.creatorProfile.findUnique({
       where: { handle: handle.toLowerCase() },
       select: {
@@ -200,7 +208,15 @@ export class SocialStudioService {
     return { blocked: true, handle: handle.toLowerCase() };
   }
 
-  async creatorBlockStatus(authorization: string | undefined, handle: string) {\n    const blockerUserId = await this.userContext(authorization);\n    const creator = await this.prisma.creatorProfile.findUnique({ where: { handle: handle.toLowerCase() }, select: { id: true } });\n    if (!creator) throw new NotFoundException("Creator not found.");\n    const block = await this.prisma.creatorBlock.findUnique({ where: { blockerUserId_creatorProfileId: { blockerUserId, creatorProfileId: creator.id } }, select: { id: true } });\n    return { blocked: Boolean(block), handle: handle.toLowerCase() };\n  }\n\n  async unblockCreator(authorization: string | undefined, handle: string) {
+  async creatorBlockStatus(authorization: string | undefined, handle: string) {
+    const blockerUserId = await this.userContext(authorization);
+    const creator = await this.prisma.creatorProfile.findUnique({ where: { handle: handle.toLowerCase() }, select: { id: true } });
+    if (!creator) throw new NotFoundException("Creator not found.");
+    const block = await this.prisma.creatorBlock.findUnique({ where: { blockerUserId_creatorProfileId: { blockerUserId, creatorProfileId: creator.id } }, select: { id: true } });
+    return { blocked: Boolean(block), handle: handle.toLowerCase() };
+  }
+
+  async unblockCreator(authorization: string | undefined, handle: string) {
     const blockerUserId = await this.userContext(authorization);
     const creator = await this.prisma.creatorProfile.findUnique({ where: { handle: handle.toLowerCase() }, select: { id: true } });
     if (!creator) return { blocked: false, handle: handle.toLowerCase() };
