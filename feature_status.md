@@ -4,7 +4,7 @@
 
 ## Snapshot
 - Repository: `dipanjanswapna/anan-`; branch: `main`.
-- Main HEAD at snapshot: `7f27c5d60aabcab442e8262858a1a1f618fbba7a`.
+- Main HEAD at snapshot: `718b85f0d03d6c67e80d66d56f7305ff41e64359`.
 - Latest feature: PR #27 Product Image Upload & Moderation, merged as `7f27c5d60aabcab442e8262858a1a1f618fbba7a`.
 - PR #27 CI run `46133765708`, job `140944437785`: completed successfully (Prisma validation/generation, API build, Web typecheck/build, Compose validation and dev image build).
 - Stack: pnpm, Next.js 15/React 19, NestJS 10, PostgreSQL 16, Prisma 6, Docker Compose.
@@ -42,17 +42,17 @@
 | Inventory / warehouses | Partial foundation | Stock-on-hand and transactional mutations | Stock ledger, reservation, multiple warehouses/bins/transfers absent. |
 | Finance / commissions / payouts | Planned | Manual refund recording only | Commission ledger, seller balance and payout lifecycle absent. |
 | Coupons / loyalty | Planned | Product decisions only | Coupon engine and points ledger absent. |
-| Social Studio / Creator | Planned | Product decisions recorded | Feature, age assurance, moderation and safety systems not implemented. |
+| Social Studio / Creator | Partial (PR in progress) | Creator profile, creator storefront, single IMAGE/VIDEO draft, submit-for-review flow, Admin moderation API/UI, public feed with PUBLISHED-only visibility | External HTTPS media URL only; no upload/scanning, age assurance, reporting/blocking, comments/likes, escalation or analytics. Not merged/deployed. |
 | Legal / privacy / consent | Planned | No complete versioned acceptance flow verified | Legal documents, consent, export/deletion remain. |
 | Analytics / BI | Planned | No production pipeline verified | Privacy-aware events and separate warehouse remain. |
 | AWS production | Planned / not deployed | Target architecture documented | ECS/RDS/S3/CloudFront/SQS/Terraform, secrets, monitoring, backup/DR not deployed/verified. |
 | QA / release readiness | Partial | Build/typecheck/schema/Compose/image CI | Unit/integration/E2E, security, load, accessibility, restore and UAT gates remain. |
 
 ## Web routes (current high-level inventory)
-- Public: `/`, `/products`, `/products/[slug]`, `/stores/[storeSlug]`, `/sell`.
+- Public: `/`, `/products`, `/products/[slug]`, `/stores/[storeSlug]`, `/sell`, `/social`, `/social/creators/[handle]`.
 - Customer: `/login`, `/account`, `/cart`, `/wishlist`, `/checkout`, `/orders`, `/orders/[id]`.
 - Seller: `/seller/login`, `/seller/dashboard`, `/seller/products/[productId]/images`.
-- Admin: `/admin/seller-applications`, `/admin/orders`, `/admin/notifications`, `/admin/returns`, `/admin/product-images`.
+- Admin: `/admin/seller-applications`, `/admin/orders`, `/admin/notifications`, `/admin/returns`, `/admin/product-images`, `/admin/social`.
 - API proxies are under `apps/web/src/app/api`; keep raw session tokens server-side.
 
 ## API module inventory
@@ -60,7 +60,7 @@
 - `catalog`: public catalog.
 - `customers`: profile, addresses, cart, wishlist, checkout, orders, returns/tracking.
 - `health`: liveness/readiness.
-- `sellers`: currently contains seller applications/orders, Admin review/notifications/orders/returns and product media. This mixed boundary is documented technical debt.
+- `sellers`: currently contains seller applications/orders, Admin review/notifications/orders/returns and product media. This mixed boundary is documented technical debt.\n- `social-studio`: creator profile, single-media posts and moderation (new isolated module).
 
 ## Recommended next sequence
 1. Product media hardening: private S3 + CloudFront OAC, credential-provider strategy/ECS role, image decode/re-encode + malware scan, quotas, orphan cleanup, migration runbook.
@@ -74,3 +74,4 @@
 
 ## Update protocol
 Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/`. Record PR, commit, CI evidence, migrations and external setup separately. Never mark production-ready from CI alone.
+\n\n## Active parallel development\n- Social Studio branch: `feat/social-studio-creator-foundation` (PR pending). Initial Creator Foundation includes profile/storefront, single-media drafts, moderation submission/review and public feed. See `docs/social-studio.md`.\n
