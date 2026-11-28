@@ -10,12 +10,12 @@
 
 ## Open risks
 
-### P0 — Migration chain cannot build a fresh database
+### P0 — Migration baseline requires CI replay and existing-database cutover
 - **Area:** Database / release.
-- **Evidence:** Running `prisma migrate deploy` against an empty PostgreSQL 19 database stops at `20261128000000_customer_orders` with `relation "User" does not exist`. No migration in `apps/api/prisma/migrations` creates the base tables (User, SellerProfile, Category, Product, …); they were evidently provisioned with `db push` before the migration history started.
-- **Impact:** A new environment (staging, production, disaster recovery, CI) cannot be created from the repository alone. Local verification this session used `prisma db push` + `migrate resolve`, which is not acceptable for release.
-- **Action:** Generate and review a baseline migration representing the pre-`customer_orders` schema (or squash into a documented initial migration with an explicit cutover plan for existing databases), then replay the whole chain against a disposable PostgreSQL in CI. `db push` must never be used for production.
-- **State:** Open; discovered this session. Not fixed because migration history changes need a deployment/ownership decision.
+- **Evidence:** The first historical migration, `20261128000000_customer_orders`, creates order tables but references `User`, `SellerProfile` and `Product`; those base tables were missing from migration history. A baseline migration has now been added at `20261127000000_baseline`, reconstructed from the Prisma schema immediately before the first orders migration (commit `d3ec652c138c332ba7065f394ce0d7a49169fd9c`).
+- **Impact:** Fresh database creation should now be possible only if the baseline accurately matches that historical schema and every subsequent migration replays successfully. Existing databases already containing the baseline objects must not execute its SQL.
+- **Action:** CI now provisions disposable PostgreSQL 16 and runs the complete `prisma migrate deploy` chain. For each existing database with the baseline objects already present but no baseline migration record, take a verified backup and follow `docs/database/migration-baseline-cutover.md` to mark the baseline as applied (never execute the baseline SQL against populated tables). Confirm schema parity before any release.
+- **State:** Fix proposed in PR; do not remove the P0 launch block until fresh-database migration CI passes and the existing-database cutover is reviewed.
 
 ### P1 — No verified production deployment or recovery exercise
 - **Area:** AWS / operations.
@@ -68,10 +68,10 @@
 
 ### P1 — Migration discipline needs production workflow
 - **Area:** Database / CI.
-- **Evidence:** Compose runs `prisma db push`; CI validates schema/generates client but does not apply migration chain to disposable PostgreSQL. Production migration execution is not recorded.
-- **Impact:** Migration order/drift/rollback problems may be discovered late.
-- **Action:** Run migrations in CI against ephemeral PostgreSQL; production uses reviewed `prisma migrate deploy` as a one-shot release job, never `db push`.
-- **State:** Open.
+- **Evidence:** The CI workflow is being updated to replay the migration chain against disposable PostgreSQL 16. Local Compose still uses `prisma db push` for developer convenience; production migration execution is not recorded.
+- **Impact:** Migration order/drift/rollback problems may be discovered late if CI replay is bypassed or production uses schema push.
+- **Action:** Require the fresh-database migration CI check; production uses reviewed `prisma migrate deploy` as a one-shot release job, never `db push`.
+- **State:** CI enforcement proposed in PR; production workflow remains open.
 
 ### P2 — CI dependency install is not frozen
 - **Area:** Reproducibility.

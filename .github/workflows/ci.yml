@@ -11,6 +11,20 @@ permissions:
 jobs:
   repository-checks:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: anan
+          POSTGRES_PASSWORD: anan_local_dev
+          POSTGRES_DB: anan_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U anan -d anan_dev"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DATABASE_URL: postgresql://anan:anan_local_dev@localhost:5432/anan_dev?schema=public
     steps:
@@ -28,6 +42,8 @@ jobs:
         run: pnpm --filter @anan/api prisma:validate
       - name: Generate Prisma Client
         run: pnpm --filter @anan/api prisma:generate
+      - name: Replay all migrations on a fresh PostgreSQL database
+        run: pnpm --filter @anan/api exec prisma migrate deploy
       - name: Build API
         run: pnpm --filter @anan/api build
       - name: Typecheck storefront
