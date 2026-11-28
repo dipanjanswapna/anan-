@@ -22,7 +22,7 @@ export default function OpenGraphImage() {
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         <div style={{ fontSize: 62, lineHeight: 1.08, fontWeight: 800, letterSpacing: -2 }}>
-          Everyday shopping,<br />made delightful.
+          Everyday shopping, made delightful.
         </div>
         <div style={{ fontSize: 28, color: "#705d8c" }}>Discover thoughtful finds from Bangladesh.</div>
       </div>
