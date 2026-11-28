@@ -29,9 +29,10 @@ Set the following in the API runtime (never commit credentials):
 - `AWS_S3_BUCKET`
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
+- `AWS_SESSION_TOKEN` when using temporary credentials
 - `MEDIA_PUBLIC_BASE_URL` — preferably the HTTPS CloudFront distribution URL. Leave empty only when the S3 object URL is intentionally public.
 
-Create a dedicated IAM principal/role restricted to `s3:PutObject` and `s3:GetObject` on the bucket prefix `products/*`. Do not grant bucket-wide administration, delete, ACL, or public-policy permissions to the application role.
+Use a dedicated least-privilege IAM role/principal restricted to `s3:PutObject` and `s3:GetObject` on the bucket prefix `products/*`. If temporary credentials are supplied, also set `AWS_SESSION_TOKEN`. Do not grant bucket-wide administration, delete, ACL, or public-policy permissions to the application role.
 
 Configure S3 CORS to allow the exact storefront origin, method `PUT`, and header `Content-Type`. Do not use wildcard origins in production. Configure CloudFront OAC and a private bucket for public delivery; set `MEDIA_PUBLIC_BASE_URL` to the distribution origin.
 
