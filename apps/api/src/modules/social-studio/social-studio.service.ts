@@ -208,6 +208,15 @@ export class SocialStudioService {
     return { blocked: true, handle: handle.toLowerCase() };
   }
 
+  async myBlockedCreators(authorization?: string) {
+    const blockerUserId = await this.userContext(authorization);
+    const blocks = await this.prisma.creatorBlock.findMany({
+      where: { blockerUserId }, orderBy: { createdAt: "desc" },
+      select: { createdAt: true, creator: { select: { handle: true, displayName: true, avatarUrl: true } } },
+    });
+    return blocks.map((block) => ({ ...block.creator, blockedAt: block.createdAt }));
+  }
+
   async creatorBlockStatus(authorization: string | undefined, handle: string) {
     const blockerUserId = await this.userContext(authorization);
     const creator = await this.prisma.creatorProfile.findUnique({ where: { handle: handle.toLowerCase() }, select: { id: true } });
