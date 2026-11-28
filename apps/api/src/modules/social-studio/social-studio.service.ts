@@ -83,7 +83,8 @@ export class SocialStudioService {
     const userId = await this.userContext(authorization);
     const creator = await this.prisma.creatorProfile.findUnique({ where: { userId }, select: { id: true } });
     if (!creator) throw new BadRequestException("Create your Creator Profile before publishing a post.");
-    const url = new URL(input.mediaUrl);
+    let url: URL;
+    try { url = new URL(input.mediaUrl); } catch { throw new BadRequestException("Media must use a valid HTTPS URL."); }
     if (url.protocol !== "https:" || url.username || url.password) throw new BadRequestException("Media must use a valid HTTPS URL.");
     return this.prisma.socialPost.create({ data: {
       creatorProfileId: creator.id, mediaType: input.mediaType, mediaUrl: url.toString(),
@@ -126,13 +127,19 @@ export class SocialStudioService {
   async reviewPost(authorization: string | undefined, id: string, input: { action: "APPROVE" | "REJECT"; notes?: string }) {
     const adminUserId = await this.adminContext(authorization);
     if (!["APPROVE", "REJECT"].includes(input.action) || (input.notes?.length ?? 0) > 1000) throw new BadRequestException("Invalid moderation decision.");
-    const current = await this.prisma.socialPost.findUnique({ where: { id }, select: { status: true } });
-    if (!current) throw new NotFoundException("Post not found.");
-    if (current.status !== "PENDING_REVIEW") throw new ConflictException("Only pending posts can be reviewed.");
-    const updated = await this.prisma.socialPost.update({ where: { id }, data: {
-      status: input.action === "APPROVE" ? "PUBLISHED" : "REJECTED",
-      moderationNotes: input.notes?.trim() || null, reviewedAt: new Date(), reviewedByUserId: adminUserId,
-    } });
+    const result = await this.prisma.socialPost.updateMany({
+      where: { id, status: "PENDING_REVIEW" },
+      data: {
+        status: input.action === "APPROVE" ? "PUBLISHED" : "REJECTED",
+        moderationNotes: input.notes?.trim() || null, reviewedAt: new Date(), reviewedByUserId: adminUserId,
+      },
+    });
+    if (!result.count) {
+      const exists = await this.prisma.socialPost.findUnique({ where: { id }, select: { id: true } });
+      if (!exists) throw new NotFoundException("Post not found.");
+      throw new ConflictException("Only pending posts can be reviewed.");
+    }
+    const updated = await this.prisma.socialPost.findUniqueOrThrow({ where: { id } });
     await this.prisma.adminAuditLog.create({ data: {
       actorUserId: adminUserId, action: "SOCIAL_POST_" + input.action, targetType: "SocialPost", targetId: id,
       metadata: { notes: input.notes?.trim() || null },
