@@ -92,7 +92,7 @@ Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/
 - Added direct-to-S3 presigned PUT flow scoped to the authenticated Creator Profile; generated keys live under `social/quarantine/<creator-profile-id>/`.
 - Creator UI supports one JPEG/PNG/WebP image (10 MiB max) or MP4/WebM video (100 MiB max), followed by signed S3 HEAD verification before a DRAFT post is created.
 - Legacy arbitrary external HTTPS media URL draft creation is disabled. Admin post approval remains required before feed/storefront publication.
-- No schema migration added in this increment. CI run 46140234885 is running; not merged, deployed, or storage-configured.
+- No schema migration added in this increment. CI run 46140234885 succeeded; follow-up block-state CI run 46144057851 is running. Not merged, deployed, or storage-configured.
 - Malware scanning, media decoding/re-encoding, EXIF removal, codec/duration inspection, video transcoding, content classification, private-origin delivery, orphan cleanup and quotas remain outstanding.
 
 
