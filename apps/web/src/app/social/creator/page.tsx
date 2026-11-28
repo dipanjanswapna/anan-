@@ -32,11 +32,24 @@ export default function CreatorDashboardPage() {
     const data = await response.json(); setMessage(response.ok ? "Creator profile saved." : data.message ?? "Could not save profile.");
     if (response.ok) await load(); setBusy(false);
   }
+  function selectMedia(event: ChangeEvent<HTMLInputElement>) { setMediaFile(event.target.files?.[0] ?? null); }
   async function createPost(event: FormEvent) {
-    event.preventDefault(); setBusy(true); setMessage("");
-    const response = await fetch("/api/social/me/posts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mediaType, mediaUrl, caption }) });
-    const data = await response.json(); setMessage(response.ok ? "Draft saved. Submit it for moderation when ready." : data.message ?? "Could not create draft.");
-    if (response.ok) { setMediaUrl(""); setCaption(""); await load(); } setBusy(false);
+    event.preventDefault();
+    if (!mediaFile) { setMessage("Choose one image or video first."); return; }
+    setBusy(true); setMessage("");
+    try {
+      const prepared = await fetch("/api/social/me/posts/upload", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mediaType, contentType: mediaFile.type, sizeBytes: mediaFile.size }) });
+      const upload = await prepared.json();
+      if (!prepared.ok) throw new Error(upload.message ?? "Could not prepare upload.");
+      const stored = await fetch(upload.uploadUrl, { method: "PUT", headers: { "content-type": mediaFile.type }, body: mediaFile });
+      if (!stored.ok) throw new Error("Media upload failed. Check S3 CORS and try again.");
+      const response = await fetch("/api/social/me/posts/complete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ storageKey: upload.storageKey, mediaType, contentType: mediaFile.type, sizeBytes: mediaFile.size, caption }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message ?? "Could not verify uploaded media.");
+      setMessage("Upload verified. Draft saved; submit it for moderation when ready.");
+      setMediaFile(null); setCaption(""); await load();
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Upload failed."); }
+    finally { setBusy(false); }
   }
   async function submit(id: string) {
     setBusy(true); const response = await fetch(`/api/social/me/posts/${id}`, { method: "POST" });
