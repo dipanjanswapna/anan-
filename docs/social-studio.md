@@ -124,3 +124,8 @@ Web proxy routes are under `/api/social` and use the existing HttpOnly `anan_ses
 - Feed currently uses newest-first chronological order, not recommendation ranking.
 - Media remains in quarantine storage without malware scanning, decode/re-encode, EXIF stripping, video transcoding or approved-object promotion. Do not expose quarantine objects publicly.
 - Add moderation appeals, evidence retention, escalation queues and operational staffing before launch.
+## Publication safety gate (2026-11-28)
+- Admin approval now fails closed when a post media URL still points to the `social/quarantine/` prefix. A post cannot be published from the quarantine area.
+- This is a deliberate safety gate, not a complete media pipeline: the post remains pending until a future scanner/sanitizer/promotion workflow stores it in approved private media storage and updates its delivery URL.
+- Feed viewer session parsing uses the same Bearer token format as the authenticated Social Studio endpoints.
+- Public creator profile visibility also respects blocks in both directions for signed-in viewers.
