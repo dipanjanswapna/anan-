@@ -77,8 +77,11 @@ export class SocialStudioService {
     if (match) {
       const session = await this.prisma.customerSession.findFirst({ where: { tokenHash: sha256(match[1]), revokedAt: null, expiresAt: { gt: new Date() }, user: { isActive: true } }, select: { userId: true } });
       if (session) {
-        const blocked = await this.prisma.creatorBlock.findFirst({ where: { blockerUserId: session.userId, creator: { handle: handle.toLowerCase() } }, select: { id: true } });
-        if (blocked) throw new NotFoundException("Creator not found.");
+        const [blockedByViewer, blockedViewer] = await Promise.all([
+          this.prisma.creatorBlock.findFirst({ where: { blockerUserId: session.userId, creator: { handle: handle.toLowerCase() } }, select: { id: true } }),
+          this.prisma.creatorBlock.findFirst({ where: { blocker: { creatorProfile: { handle: handle.toLowerCase() } }, creator: { userId: session.userId } }, select: { id: true } }),
+        ]);
+        if (blockedByViewer || blockedViewer) throw new NotFoundException("Creator not found.");
       }
     }
     const profile = await this.prisma.creatorProfile.findUnique({
