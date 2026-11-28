@@ -53,4 +53,32 @@ export class AdminNotificationsService {
     }
     return { id, read: true };
   }
+  async monitorOrders(authorization?: string, status?: string) {
+    await this.authorize(authorization);
+    const allowed = ["PENDING_SELLER_ACCEPTANCE", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+    if (status && !allowed.includes(status)) throw new NotFoundException("Unsupported order status filter.");
+    const where = status ? { status: status as never } : {};
+    const [counts, orders] = await Promise.all([
+      this.prisma.order.groupBy({ by: ["status"], _count: { _all: true } }),
+      this.prisma.order.findMany({
+        where, orderBy: { createdAt: "desc" }, take: 100,
+        include: {
+          user: { select: { id: true, name: true, phone: true } },
+          sellerOrders: { include: { seller: { select: { storeName: true, storeSlug: true } }, shipment: { include: { events: { orderBy: { occurredAt: "desc" }, take: 5 } } } } },
+        },
+      }),
+    ]);
+    return {
+      counts: counts.map((item) => ({ status: item.status, count: item._count._all })),
+      orders: orders.map((order) => ({
+        id: order.id, status: order.status, paymentStatus: order.paymentStatus,
+        totalPaisa: order.totalPaisa.toString(), createdAt: order.createdAt.toISOString(),
+        customer: order.user,
+        sellerOrders: order.sellerOrders.map((item) => ({
+          id: item.id, status: item.status, seller: item.seller,
+          shipment: item.shipment ? { ...item.shipment, events: item.shipment.events, createdAt: item.shipment.createdAt.toISOString(), updatedAt: item.shipment.updatedAt.toISOString() } : null,
+        })),
+      })),
+    };
+  }
 }
