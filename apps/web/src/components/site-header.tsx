@@ -79,7 +79,7 @@ export function SiteHeader() {
   return (
     <>
       <div className="bg-[#24143f] text-white">
-        <div className="container-shell flex min-h-9 items-center justify-center gap-2 text-center text-[10.5px] font-medium tracking-wide sm:text-xs">
+        <div className="container-shell flex min-h-8 items-center justify-center gap-2 text-center text-[10.5px] font-medium tracking-wide sm:text-xs">
           <Sparkles size={12} className="shrink-0 text-[#d9c5ff]" aria-hidden />
           <span>Thoughtful finds from approved sellers</span>
           <span className="hidden text-white/50 sm:inline">· Cash on delivery across Bangladesh</span>
@@ -88,7 +88,7 @@ export function SiteHeader() {
 
       <header className="sticky top-0 z-40 border-b border-[#eeeaf5] bg-white/95 backdrop-blur-xl">
         <div className="container-shell">
-          <div className="flex h-[64px] items-center gap-2 sm:h-[72px] sm:gap-4 lg:gap-7">
+          <div className="flex h-[60px] items-center gap-2 sm:h-[66px] sm:gap-4 lg:gap-7">
             <button
               type="button"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -101,16 +101,16 @@ export function SiteHeader() {
             </button>
 
             <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="ANAN home">
-              <span className="grid h-8 w-8 place-items-center rounded-xl bg-brand-600 text-base font-black text-white shadow-[0_6px_16px_rgba(116,52,223,.25)] sm:h-9 sm:w-9 sm:text-lg">
+              <span className="grid h-9 w-9 place-items-center rounded-[13px] bg-gradient-to-br from-[#8754e8] to-[#5d2ca3] text-base font-black text-white shadow-[0_6px_16px_rgba(116,52,223,.25)] sm:h-9 sm:w-9 sm:text-lg">
                 a
               </span>
-              <span className="text-[22px] font-extrabold tracking-[-1.4px] text-[#24143f] sm:text-[25px]">
+              <span className="text-[23px] font-extrabold tracking-[-1.5px] text-[#24143f] sm:text-[25px]">
                 anan<span className="text-brand-600">.</span>
               </span>
             </Link>
 
             <div className="hidden min-w-0 flex-1 lg:block">
-              <form action="/products" role="search" className="flex h-11 items-center gap-3 rounded-xl border border-[#e9e3f2] bg-[#faf9fc] px-4 transition focus-within:border-brand-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-100">
+              <form action="/products" role="search" className="flex h-10 items-center gap-3 rounded-full border border-[#e9e3f2] bg-[#f8f6fb] px-4 transition focus-within:border-brand-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-100">
                 <Search size={18} className="shrink-0 text-[#8d819f]" aria-hidden />
                 <input
                   name="q"
@@ -163,7 +163,7 @@ export function SiteHeader() {
             </div>
           </div>
 
-          <div className="soft-scrollbar hidden items-center gap-5 overflow-x-auto border-t border-[#f3eff7] py-2.5 lg:flex lg:gap-7">
+          <div className="soft-scrollbar hidden items-center gap-5 overflow-x-auto border-t border-[#f3eff7] py-2 lg:flex lg:gap-7">
             <Link href="/categories" className="flex shrink-0 items-center gap-2 text-xs font-bold text-brand-700">
               <span className="grid h-6 w-6 place-items-center rounded-md bg-brand-50" aria-hidden>☷</span> All categories
             </Link>
@@ -172,7 +172,7 @@ export function SiteHeader() {
                 key={item.slug}
                 href={`/categories/${item.slug}`}
                 aria-current={pathname === `/categories/${item.slug}` ? "page" : undefined}
-                className={`shrink-0 text-xs font-semibold transition hover:text-brand-600 ${
+                className={`shrink-0 rounded-full px-2.5 py-2 text-xs font-semibold transition hover:bg-[#f7f3ff] hover:text-brand-700 ${
                   pathname === `/categories/${item.slug}` ? "text-brand-700" : "text-[#71677e]"
                 }`}
               >
@@ -194,16 +194,16 @@ export function SiteHeader() {
         </div>
 
         {menuOpen ? (
-          <div id="mobile-menu" className="absolute inset-x-0 top-full max-h-[calc(100dvh-104px)] overflow-y-auto border-t border-[#eeeaf5] bg-white shadow-soft lg:hidden">
-            <nav aria-label="Mobile" className="container-shell grid gap-1 py-4">
+          <div id="mobile-menu" className="fixed inset-x-0 top-[104px] z-50 max-h-[calc(100dvh-104px)] overflow-y-auto border-t border-[#eeeaf5] bg-white shadow-[0_24px_60px_-30px_rgba(30,15,50,.35)] lg:hidden">
+            <nav aria-label="Mobile" className="container-shell grid gap-1 py-5">
               <p className="px-1 pb-1 text-[9.5px] font-bold uppercase tracking-[.16em] text-[#a096ad]">Shop by category</p>
               <div className="grid grid-cols-2 gap-1.5">
                 {navItems.map((item) => (
-                  <Link key={item.slug} href={`/categories/${item.slug}`} className="rounded-xl bg-[#faf8fd] px-3.5 py-3 text-[12.5px] font-semibold text-[#49375f]">
+                  <Link key={item.slug} href={`/categories/${item.slug}`} className="rounded-xl border border-[#eee8f5] bg-white px-3.5 py-3.5 text-[12.5px] font-semibold text-[#49375f]">
                     {item.label}
                   </Link>
                 ))}
-                <Link href="/deals" className="rounded-xl bg-[#fff3e8] px-3.5 py-3 text-[12.5px] font-bold text-[#bd6424]">Today’s deals</Link>
+                <Link href="/deals" className="rounded-xl border border-[#f6e4d3] bg-[#fff7ef] px-3.5 py-3.5 text-[12.5px] font-bold text-[#bd6424]">Today’s deals</Link>
                 <Link href="/stores" className="rounded-xl bg-[#faf8fd] px-3.5 py-3 text-[12.5px] font-semibold text-[#49375f]">Stores</Link>
               </div>
               <p className="px-1 pb-1 pt-3 text-[9.5px] font-bold uppercase tracking-[.16em] text-[#a096ad]">Your account</p>
