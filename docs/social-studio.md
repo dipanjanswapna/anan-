@@ -129,3 +129,8 @@ Web proxy routes are under `/api/social` and use the existing HttpOnly `anan_ses
 - This is a deliberate safety gate, not a complete media pipeline: the post remains pending until a future scanner/sanitizer/promotion workflow stores it in approved private media storage and updates its delivery URL.
 - Feed viewer session parsing uses the same Bearer token format as the authenticated Social Studio endpoints.
 - Public creator profile visibility also respects blocks in both directions for signed-in viewers.
+## Creator analytics API (2026-11-28)
+- GET /creators/me/analytics requires an active customer/seller session and an existing creator profile.
+- Returns current follower count, new followers in the last 30 days, published/pending/rejected post counts, published-post likes and approved comments in the last 30 days, and the 10 most recent published posts with their current like/comment totals.
+- Response explicitly states that reach and impressions are unavailable because view tracking has not been implemented. Do not present engagement counts as reach or impressions.
+- This is an initial analytics summary, not a full time-series dashboard; historical daily snapshots and unique-view tracking remain future work.
