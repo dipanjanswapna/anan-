@@ -8,9 +8,10 @@ import { AdminSellerApplicationsService } from "./admin-seller-applications.serv
 import { SellerOrderExpiryWorker } from "./seller-order-expiry.worker";
 import { AdminNotificationsController } from "./admin-notifications.controller";
 import { AdminNotificationsService } from "./admin-notifications.service";
+import { AdminOrdersController } from "./admin-orders.controller";
 
 @Module({
-  controllers: [SellerApplicationsController, SellerOrdersController, AdminSellerApplicationsController, AdminNotificationsController],
+  controllers: [SellerApplicationsController, SellerOrdersController, AdminSellerApplicationsController, AdminNotificationsController, AdminOrdersController],
   providers: [SellerApplicationsService, SellerOrdersService, AdminSellerApplicationsService, AdminNotificationsService, SellerOrderExpiryWorker],
 })
 export class SellersModule {}
