@@ -54,7 +54,7 @@ export class AdminNotificationsService {
     return { id, read: true };
   }
   private async returnAdminContext(authorization?: string) {
-    const match = authorization?.match(/^Bearer\\s+([A-Za-z0-9_-]{40,})$/i);
+    const match = authorization?.match(/^Bearer\s+([A-Za-z0-9_-]{40,})$/i);
     if (!match) throw new UnauthorizedException("An administrator session is required.");
     const tokenHash = createHash("sha256").update(match[1]).digest("hex");
     const session = await this.prisma.customerSession.findFirst({
@@ -115,7 +115,7 @@ export class AdminNotificationsService {
       if (input.confirmManualRefund !== true) throw new ConflictException("Confirm that the refund was completed outside ANAN before recording it.");
       if (!input.refundReference || input.refundReference.trim().length < 4 || input.refundReference.trim().length > 100) throw new ConflictException("A valid external refund reference is required.");
       if (!["BKASH", "NAGAD", "ROCKET", "BANK_TRANSFER", "CASH"].includes(input.refundMethod || "")) throw new ConflictException("Choose a supported manual refund method.");
-      if (!input.refundAmountPaisa || !/^\\d+$/.test(input.refundAmountPaisa) || BigInt(input.refundAmountPaisa) <= 0n) throw new ConflictException("Refund amount must be a positive paisa value.");
+      if (!input.refundAmountPaisa || !/^\d+$/.test(input.refundAmountPaisa) || BigInt(input.refundAmountPaisa) <= 0n) throw new ConflictException("Refund amount must be a positive paisa value.");
     }
     return this.prisma.$transaction(async (tx) => {
       const request = await tx.returnRequest.findUnique({
