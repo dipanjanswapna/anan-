@@ -300,7 +300,14 @@ export class CustomerCommerceService {
     const userId = await this.customerId(authorization);
     const order = await this.prisma.order.findFirst({
       where: { id, userId },
-      include: { sellerOrders: { include: { items: true, shipment: { include: { events: { orderBy: { occurredAt: "asc" } } } } } },
+      include: {
+        sellerOrders: {
+          include: {
+            items: true,
+            shipment: { include: { events: { orderBy: { occurredAt: "asc" } } } },
+          },
+        },
+      },
     });
     if (!order) throw new NotFoundException("Order not found.");
     return { order: this.serializeOrder(order) };
