@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Package, ShieldCheck, Store, Truck } from "lucide-react";
@@ -26,6 +27,26 @@ async function getProduct(slug: string): Promise<Product | null> {
     if (!response.ok) return null;
     return await response.json() as Product;
   } catch { return null; }
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProduct(slug);
+  if (!product) return { title: "Product not found", robots: { index: false, follow: false } };
+  const description = (product.descriptionEn || product.nameEn).slice(0, 160);
+  const canonical = "/products/" + encodeURIComponent(product.slug);
+  return {
+    title: product.nameEn,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: product.nameEn + " | ANAN",
+      description,
+      url: canonical,
+      type: "website",
+    },
+    twitter: { card: "summary_large_image", title: product.nameEn, description },
+  };
 }
 
 export default async function ProductDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
