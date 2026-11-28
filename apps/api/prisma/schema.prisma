@@ -105,6 +105,7 @@ model User {
   socialSaves     SocialPostSave[]
   socialNotifications SocialNotification[] @relation("SocialNotificationRecipient")
   socialActions       SocialNotification[] @relation("SocialNotificationActor")
+  socialRateLimitBuckets SocialRateLimitBucket[]
   sessions        CustomerSession[]
   addresses       CustomerAddress[]
   cartItems       CartItem[]
@@ -663,4 +664,18 @@ model SocialNotification {
   post             SocialPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([recipientUserId, readAt, createdAt])
+}
+
+model SocialRateLimitBucket {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  windowStart DateTime
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, action, windowStart])
+  @@index([windowStart])
 }
