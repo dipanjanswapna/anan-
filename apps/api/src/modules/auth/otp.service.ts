@@ -43,6 +43,13 @@ export class OtpService {
       });
       if (!eligible) return { message: "If this number can receive messages, a verification code has been sent." };
     }
+    if (purpose === OtpPurpose.ADMIN_LOGIN) {
+      const eligible = await this.prisma.user.findFirst({
+        where: { phone, role: { in: [UserRole.ADMIN, UserRole.STAFF] }, isActive: true },
+        select: { id: true },
+      });
+      if (!eligible) return { message: "If this number can receive messages, a verification code has been sent." };
+    }
     const now = new Date();
     const windowStart = new Date(now.getTime() - OTP_WINDOW_MS);
     const recentCount = await this.prisma.otpChallenge.count({
@@ -87,7 +94,7 @@ export class OtpService {
   }
 
   async verify(phone: string, purpose: OtpPurpose, code: string) {
-    if (![OtpPurpose.CUSTOMER_LOGIN, OtpPurpose.CUSTOMER_SIGNUP, OtpPurpose.SELLER_PHONE_VERIFICATION].includes(purpose)) {
+    if (![OtpPurpose.CUSTOMER_LOGIN, OtpPurpose.CUSTOMER_SIGNUP, OtpPurpose.SELLER_PHONE_VERIFICATION, OtpPurpose.ADMIN_LOGIN].includes(purpose)) {
       throw new ForbiddenException("This verification purpose cannot create a session.");
     }
     const now = new Date();
@@ -137,7 +144,14 @@ export class OtpService {
       let accountId: string;
       let accountPhone: string | null;
       let accountRole: UserRole;
-      if (purpose === OtpPurpose.SELLER_PHONE_VERIFICATION) {
+      if (purpose === OtpPurpose.ADMIN_LOGIN) {
+        if (!existingAccount || !existingAccount.isActive || (existingAccount.role !== UserRole.ADMIN && existingAccount.role !== UserRole.STAFF)) {
+          throw new ForbiddenException("This number is not linked to an active admin account.");
+        }
+        accountId = existingAccount.id;
+        accountPhone = existingAccount.phone;
+        accountRole = existingAccount.role;
+      } else if (purpose === OtpPurpose.SELLER_PHONE_VERIFICATION) {
         if (!existingAccount || existingAccount.role !== UserRole.SELLER || !existingAccount.isActive || existingAccount.sellerProfile?.status !== "APPROVED") {
           throw new ForbiddenException("This seller account is not approved or active.");
         }

@@ -37,6 +37,28 @@ export class CatalogService {
     }));
   }
 
+  async getStores() {
+    const sellers = await this.prisma.sellerProfile.findMany({
+      where: { status: "APPROVED", products: { some: { status: "APPROVED" } } },
+      orderBy: { createdAt: "asc" },
+      take: 48,
+      select: {
+        storeName: true,
+        storeSlug: true,
+        createdAt: true,
+        _count: { select: { products: { where: { status: "APPROVED" } } } },
+      },
+    });
+    return {
+      stores: sellers.map((seller) => ({
+        storeName: seller.storeName,
+        storeSlug: seller.storeSlug,
+        joinedAt: seller.createdAt.toISOString(),
+        productCount: seller._count.products,
+      })),
+    };
+  }
+
   async getProductBySlug(slug: string) {
     const product = await this.prisma.product.findFirst({
       where: {
@@ -113,6 +135,8 @@ export class CatalogService {
   async getProducts(query: CatalogQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 12;
+    const minPrice = typeof query.minPrice === "number" ? BigInt(query.minPrice) : undefined;
+    const maxPrice = typeof query.maxPrice === "number" ? BigInt(query.maxPrice) : undefined;
     const where = {
       status: "APPROVED" as const,
       seller: { status: "APPROVED" as const },
@@ -120,6 +144,11 @@ export class CatalogService {
         isActive: true,
         ...(query.category ? { slug: query.category } : {}),
       },
+      ...(minPrice !== undefined || maxPrice !== undefined
+        ? { pricePaisa: { ...(minPrice !== undefined ? { gte: minPrice } : {}), ...(maxPrice !== undefined ? { lte: maxPrice } : {}) } }
+        : {}),
+      ...(query.inStock === "true" ? { stockOnHand: { gt: 0 } } : {}),
+      ...(query.onSale === "true" ? { compareAtPricePaisa: { not: null } } : {}),
       ...(query.search
         ? {
             OR: [
@@ -135,7 +164,14 @@ export class CatalogService {
     const [items, total] = await this.prisma.$transaction([
       this.prisma.product.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy:
+          query.sort === "price_asc"
+            ? { pricePaisa: "asc" as const }
+            : query.sort === "price_desc"
+              ? { pricePaisa: "desc" as const }
+              : query.sort === "name_asc"
+                ? { nameEn: "asc" as const }
+                : { createdAt: "desc" as const },
         skip: (page - 1) * limit,
         take: limit,
         select: {

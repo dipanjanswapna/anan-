@@ -33,6 +33,7 @@ enum OtpPurpose {
   CUSTOMER_LOGIN
   CUSTOMER_SIGNUP
   SELLER_PHONE_VERIFICATION
+  ADMIN_LOGIN
 }
 
 enum OrderStatus {
@@ -222,6 +223,8 @@ model Product {
   compareAtPricePaisa  BigInt?
   stockOnHand          Int           @default(0)
   status               ProductStatus @default(DRAFT)
+  reviewNotes          String?
+  reviewedAt           DateTime?
   seller               SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Restrict)
   category             Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   createdAt            DateTime      @default(now())

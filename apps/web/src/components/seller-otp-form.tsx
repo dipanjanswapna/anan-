@@ -6,6 +6,16 @@ import Link from "next/link";
 
 type Step = "phone" | "code";
 
+const normalizePhone = (value: string) => {
+  const digits = value.replace(/[^\d+]/g, "");
+  if (digits.startsWith("+880")) return digits;
+  if (digits.startsWith("880")) return `+${digits}`;
+  if (digits.startsWith("01")) return `+88${digits}`;
+  if (digits.startsWith("1")) return `+880${digits}`;
+  return digits;
+};
+const isValidPhone = (value: string) => /^\+8801[3-9]\d{8}$/.test(value);
+
 export function SellerOtpForm() {
   const [phone, setPhone] = useState("+880");
   const [code, setCode] = useState("");
@@ -16,18 +26,25 @@ export function SellerOtpForm() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true); setError(""); setNotice("");
+    setError(""); setNotice("");
+    const normalized = normalizePhone(phone);
+    if (!isValidPhone(normalized)) {
+      setError("Enter a valid Bangladeshi mobile number, for example 01712345678.");
+      return;
+    }
+    setBusy(true);
     try {
       const action = step === "phone" ? "request" : "verify";
       const response = await fetch(`/api/auth/otp/${action}`, {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify(step === "phone"
-          ? { phone, purpose: "SELLER_PHONE_VERIFICATION" }
-          : { phone, code, purpose: "SELLER_PHONE_VERIFICATION" }),
+          ? { phone: normalized, purpose: "SELLER_PHONE_VERIFICATION" }
+          : { phone: normalized, code, purpose: "SELLER_PHONE_VERIFICATION" }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Unable to continue.");
       if (step === "phone") {
+        setPhone(normalized);
         setStep("code");
         setNotice("If this number belongs to an approved seller account, a code has been sent.");
       } else {

@@ -16,6 +16,11 @@ export class CatalogController {
     return this.catalog.getProductBySlug(slug);
   }
 
+  @Get("stores")
+  getStores() {
+    return this.catalog.getStores();
+  }
+
   @Get("stores/:storeSlug")
   getStorefront(@Param("storeSlug") storeSlug: string, @Query() query: CatalogQueryDto) {
     return this.catalog.getStorefront(storeSlug, query);
