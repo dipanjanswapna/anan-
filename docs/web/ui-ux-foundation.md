@@ -86,3 +86,14 @@ Copy must match implemented behaviour: cash on delivery only, no online payments
 - `site-header.tsx`, `customer-cart.tsx`, `customer-checkout.tsx`, `customer-account.tsx`, `customer-orders.tsx`, `customer-wishlist.tsx` — badge refresh, full mobile drawer, cart line controls, three-step checkout, account dashboard.
 - Responsive result: 60 checks at 320/375/430/768/1024/1440/1920px across public and authenticated pages reported no horizontal overflow; the only flagged elements are intentionally clipped off-screen carousel slides.
 - Copy policy: no invented ratings, reviews, brands, coupons or delivery fees; unsupported features show honest empty/disabled states.
+
+
+## Brand and navigation refresh (November 2026)
+
+- Canonical visual identity: `docs/brand/brand-guidelines.md`.
+- Shared tokens now define the ANAN 950–50 purple scale, ink, muted text, line, canvas, card radius and elevation.
+- Storefront shell has a tighter utility strip/header rhythm, a clearer rounded search field, a compact category navigation rail and a more deliberate mobile category/account drawer.
+- Hero carousel height has been reduced to a compact editorial format: 340px mobile, 380px tablet, 420–450px desktop. Existing pause, swipe, keyboard and reduced-motion behaviour is retained.
+- Seller Centre navigation receives a stronger active state, consistent mark, sticky translucent shell and larger touch targets.
+- Shared CSS primitives are available for future Seller/Admin sidebars: `.anan-sidebar`, `.anan-nav-link`, `.anan-panel`, `.anan-button-primary`.
+- This increment is a design-system and shell refresh, not a claim that every individual route has been visually audited. Browser screenshots, keyboard walkthrough and WCAG contrast checks remain required before production sign-off.
