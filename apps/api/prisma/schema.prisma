@@ -283,6 +283,7 @@ model SellerOrder {
   order             Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
   seller            SellerProfile     @relation(fields: [sellerId], references: [id], onDelete: Restrict)
   items             OrderItem[]
+  shipment          CourierShipment?
 
   @@unique([orderId, sellerId])
   @@index([sellerId, status, createdAt])
@@ -365,4 +366,46 @@ model AdminNotification {
 
   @@index([readAt, createdAt])
   @@index([targetType, targetId])
+}
+
+ 
+enum ShipmentStatus {
+  LABEL_CREATED
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  DELIVERY_FAILED
+  RETURNED
+}
+
+model CourierShipment {
+  id                String         @id @default(cuid())
+  sellerOrderId     String         @unique
+  courierName       String
+  trackingNumber    String
+  trackingUrl       String?
+  status            ShipmentStatus @default(LABEL_CREATED)
+  estimatedDeliveryAt DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  sellerOrder       SellerOrder    @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
+  events            ShipmentEvent[]
+
+  @@index([status, updatedAt])
+  @@index([courierName, trackingNumber])
+}
+
+model ShipmentEvent {
+  id          String         @id @default(cuid())
+  shipmentId  String
+  status      ShipmentStatus
+  description String?
+  occurredAt  DateTime       @default(now())
+  createdAt   DateTime       @default(now())
+  shipment    CourierShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId, occurredAt])
 }
