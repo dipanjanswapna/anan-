@@ -52,8 +52,8 @@ export class AdminSellerApplicationsService {
       let provisionedUserId: string | null = null;
       if (input.action === "APPROVED") {
         const [byPhone, byEmail] = await Promise.all([
-          tx.user.findUnique({ where: { phone: application.phone } }),
-          tx.user.findUnique({ where: { email: application.email } }),
+          tx.user.findUnique({ where: { phone: application.phone }, include: { sellerProfile: true } }),
+          tx.user.findUnique({ where: { email: application.email }, include: { sellerProfile: true } }),
         ]);
         if (byPhone && byEmail && byPhone.id !== byEmail.id) {
           throw new ConflictException("The application phone and email belong to different accounts. Manual identity review is required.");
