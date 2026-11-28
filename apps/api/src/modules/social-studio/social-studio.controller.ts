@@ -21,7 +21,7 @@ export class SocialStudioController {
   }
 
   @Get("creators/:handle")
-  publicProfile(@Param("handle") handle: string) { return this.social.publicProfile(handle); }
+  publicProfile(@Param("handle") handle: string, @Headers("authorization") auth?: string) { return this.social.publicProfile(handle, auth); }
 
   @Get("creators/me/posts")
   myPosts(@Headers("authorization") auth?: string) { return this.social.myPosts(auth); }
@@ -59,8 +59,8 @@ export class SocialStudioController {
     return this.social.blockCreator(auth, handle);
   }
 
-  @Post("creators/:handle/unblock")
-  unblockCreator(@Headers("authorization") auth: string | undefined, @Param("handle") handle: string) {
+  @Get("creators/:handle/block-status")\n  creatorBlockStatus(@Headers("authorization") auth: string | undefined, @Param("handle") handle: string) {\n    return this.social.creatorBlockStatus(auth, handle);\n  }\n\n  @Post("creators/:handle/unblock")
+  @Patch("creators/:handle/unblock")\n  unblockCreator(@Headers("authorization") auth: string | undefined, @Param("handle") handle: string) {
     return this.social.unblockCreator(auth, handle);
   }
 
