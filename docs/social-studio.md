@@ -105,3 +105,22 @@ Web proxy routes are under `/api/social` and use the existing HttpOnly `anan_ses
 - Add follow-feed ranking and pagination cursor; current feed is latest-first with a bounded page size.
 - Add moderation appeals, evidence retention policy, escalation queue and staff workflow.
 - Complete secure media quarantine scanning and promotion to private approved delivery storage before production.
+
+## Feed pagination, following feed and abuse throttling (2026-11-28)
+- Public feed now returns items and nextCursor and supports limit (1-50) plus post-ID cursor pagination.
+- GET /social/feed/following returns only approved posts from followed creators, also cursor-paginated.
+- Block relationships are mutual for feed visibility: a viewer's blocked creators and creators who blocked the viewer are excluded.
+- Database-backed fixed-minute action buckets throttle authenticated follows (20/min), likes (60/min), comments (8/min) and reports (5/min). Counters increment atomically in PostgreSQL; exceeded requests receive HTTP 429.
+- Added SocialRateLimitBucket model and additive migration 20261128140000_social_rate_limits.
+
+### Feed API
+- GET /social/posts?limit=20&cursor=postId
+- GET /social/feed/following?limit=20&cursor=postId
+
+### Known hardening still required
+- Add automated unit/integration tests for rate-limit concurrency, authorization, moderation transitions, notification privacy and pagination.
+- Add scheduled retention cleanup for old SocialRateLimitBucket rows.
+- Rate limits are per authenticated user, not per IP/device; edge/WAF rate limiting is still required for anonymous traffic and distributed abuse.
+- Feed currently uses newest-first chronological order, not recommendation ranking.
+- Media remains in quarantine storage without malware scanning, decode/re-encode, EXIF stripping, video transcoding or approved-object promotion. Do not expose quarantine objects publicly.
+- Add moderation appeals, evidence retention, escalation queues and operational staffing before launch.
