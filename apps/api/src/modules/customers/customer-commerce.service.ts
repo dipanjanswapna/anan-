@@ -186,7 +186,7 @@ export class CustomerCommerceService {
 
         for (const group of groups.values()) {
           const sellerOrder = await tx.sellerOrder.create({
-            data: { orderId: created.id, sellerId: group.sellerId, subtotalPaisa: group.subtotalPaisa },
+            data: { orderId: created.id, sellerId: group.sellerId, subtotalPaisa: group.subtotalPaisa, acceptanceDeadlineAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
           });
           await tx.orderItem.createMany({
             data: group.lines.map((line) => ({ ...line, orderId: created.id, sellerOrderId: sellerOrder.id })),

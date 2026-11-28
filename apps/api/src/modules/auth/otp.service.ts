@@ -36,6 +36,13 @@ export class OtpService {
   }
 
   async request(phone: string, purpose: OtpPurpose) {
+    if (purpose === OtpPurpose.SELLER_PHONE_VERIFICATION) {
+      const eligible = await this.prisma.user.findFirst({
+        where: { phone, role: UserRole.SELLER, isActive: true, sellerProfile: { is: { status: "APPROVED" } } },
+        select: { id: true },
+      });
+      if (!eligible) return { message: "If this number can receive messages, a verification code has been sent." };
+    }
     const now = new Date();
     const windowStart = new Date(now.getTime() - OTP_WINDOW_MS);
     const recentCount = await this.prisma.otpChallenge.count({
@@ -80,8 +87,8 @@ export class OtpService {
   }
 
   async verify(phone: string, purpose: OtpPurpose, code: string) {
-    if (purpose !== OtpPurpose.CUSTOMER_LOGIN && purpose !== OtpPurpose.CUSTOMER_SIGNUP) {
-      throw new ForbiddenException("This verification purpose cannot create a customer session.");
+    if (![OtpPurpose.CUSTOMER_LOGIN, OtpPurpose.CUSTOMER_SIGNUP, OtpPurpose.SELLER_PHONE_VERIFICATION].includes(purpose)) {
+      throw new ForbiddenException("This verification purpose cannot create a session.");
     }
     const now = new Date();
     const challenge = await this.prisma.otpChallenge.findFirst({
@@ -126,18 +133,34 @@ export class OtpService {
       if (consumed.count !== 1) {
         throw new UnauthorizedException("The verification code is invalid or expired.");
       }
-      let account = await tx.user.findUnique({ where: { phone } });
-      if (account && account.role !== UserRole.CUSTOMER) {
-        throw new ForbiddenException("This mobile number is linked to a non-customer account.");
+      const existingAccount = await tx.user.findUnique({ where: { phone }, include: { sellerProfile: true } });
+      let accountId: string;
+      let accountPhone: string | null;
+      let accountRole: UserRole;
+      if (purpose === OtpPurpose.SELLER_PHONE_VERIFICATION) {
+        if (!existingAccount || existingAccount.role !== UserRole.SELLER || !existingAccount.isActive || existingAccount.sellerProfile?.status !== "APPROVED") {
+          throw new ForbiddenException("This seller account is not approved or active.");
+        }
+        accountId = existingAccount.id;
+        accountPhone = existingAccount.phone;
+        accountRole = existingAccount.role;
+      } else {
+        if (existingAccount && existingAccount.role !== UserRole.CUSTOMER) {
+          throw new ForbiddenException("This mobile number is linked to a non-customer account.");
+        }
+        if (existingAccount && !existingAccount.isActive) {
+          throw new ForbiddenException("This customer account is disabled.");
+        }
+        const customerAccount = existingAccount
+          ? await tx.user.update({ where: { id: existingAccount.id }, data: { phoneVerifiedAt: now } })
+          : await tx.user.create({ data: { phone, role: UserRole.CUSTOMER, phoneVerifiedAt: now } });
+        accountId = customerAccount.id;
+        accountPhone = customerAccount.phone;
+        accountRole = customerAccount.role;
       }
-      if (account && !account.isActive) {
-        throw new ForbiddenException("This customer account is disabled.");
-      }
-      account = account
-        ? await tx.user.update({ where: { id: account.id }, data: { phoneVerifiedAt: now } })
-        : await tx.user.create({ data: { phone, role: UserRole.CUSTOMER, phoneVerifiedAt: now } });
-      await tx.customerSession.create({ data: { userId: account.id, tokenHash, expiresAt } });
-      return { id: account.id, phone: account.phone, role: account.role };
+      await tx.user.update({ where: { id: accountId }, data: { phoneVerifiedAt: now } });
+      await tx.customerSession.create({ data: { userId: accountId, tokenHash, expiresAt } });
+      return { id: accountId, phone: accountPhone, role: accountRole };
     });
     return {
       authenticated: true,
