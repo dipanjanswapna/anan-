@@ -87,6 +87,8 @@ model User {
   cartItems       CartItem[]
   wishlistItems   WishlistItem[]
   orders          Order[]
+  adminPermissions AdminPermission[]
+  adminAuditLogs  AdminAuditLog[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -153,6 +155,9 @@ model SellerApplication {
   businessType String
   message      String?
   status       SellerApplicationStatus @default(PENDING)
+  reviewNotes  String?
+  reviewedAt   DateTime?
+  reviewedByUserId String?
   createdAt    DateTime                @default(now())
   updatedAt    DateTime                @updatedAt
 
@@ -318,4 +323,30 @@ model OrderEvent {
 
   @@index([orderId, createdAt])
   @@index([actorUserId, createdAt])
+}
+
+
+model AdminPermission {
+  id         String   @id @default(cuid())
+  userId     String
+  permission String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permission])
+  @@index([permission, userId])
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  action      String
+  targetType  String
+  targetId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  actor       User     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([actorUserId, createdAt])
+  @@index([targetType, targetId, createdAt])
 }
