@@ -19,7 +19,11 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
   const commerceCollectionRoutes: Record<string, string> = {
     "me/cart": "/customers/me/cart",
     "me/wishlist": "/customers/me/wishlist",
+    "me/checkout": "/customers/me/checkout",
+    "me/orders": "/customers/me/orders",
   };
+  const orderId = path.length === 3 && path[0] === "me" && path[1] === "orders" ? path[2] : null;
+  const orderRoute = orderId && /^[a-zA-Z0-9_-]{1,64}$/.test(orderId) ? `/customers/me/orders/${orderId}` : null;
   const allowed =
     (key === "me" && ["GET", "PATCH"].includes(method)) ||
     (key === "me/addresses" && ["GET", "POST"].includes(method)) ||
@@ -27,14 +31,17 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
     (key === "me/cart" && method === "GET") ||
     (cartItemRoute !== null && ["POST", "PATCH", "DELETE"].includes(method)) ||
     (key === "me/wishlist" && method === "GET") ||
+    (key === "me/checkout" && method === "POST") ||
+    (key === "me/orders" && method === "GET") ||
+    (orderRoute !== null && method === "GET") ||
     (wishlistItemRoute !== null && ["POST", "DELETE"].includes(method));
-  const upstreamPath = routes[key] ?? addressRoute ?? commerceCollectionRoutes[key] ?? cartItemRoute ?? wishlistItemRoute;
+  const upstreamPath = routes[key] ?? addressRoute ?? commerceCollectionRoutes[key] ?? cartItemRoute ?? wishlistItemRoute ?? orderRoute;
   if (!allowed || !upstreamPath) return NextResponse.json({ message: "Not found." }, { status: 404 });
 
   const token = request.cookies.get("anan_session")?.value;
   if (!token) return NextResponse.json({ message: "Please sign in to continue." }, { status: 401 });
   try {
-    const hasBody = method === "PATCH" || (method === "POST" && (key === "me/addresses" || cartItemRoute !== null));
+    const hasBody = method === "PATCH" || (method === "POST" && (key === "me/addresses" || key === "me/checkout" || cartItemRoute !== null));
     const body = hasBody ? await request.json() : undefined;
     const upstream = await fetch(`${apiBase()}${upstreamPath}`, {
       method,
