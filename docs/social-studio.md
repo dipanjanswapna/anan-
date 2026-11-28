@@ -68,3 +68,9 @@ Web proxy routes are under `/api/social` and use the existing HttpOnly `anan_ses
 - The unblock proxy and API now both use PATCH consistently; a dedicated authenticated block-status endpoint reports the current state.
 - Signed-in viewers who have blocked a creator receive a not-found response for that creator storefront; public feed filtering remains in place.
 - Anonymous visitors can still view public creator profiles. Block state is private to the viewer.
+
+
+## Blocked creator management
+- `GET /api/social/me/blocks` returns the signed-in viewer's blocked creators.
+- The `/social/blocked-creators` page lets the viewer review and unblock creators without reopening their storefront.
+- The page is linked from the Social Studio feed. This is a viewer-level content preference, not a platform-wide account ban.
