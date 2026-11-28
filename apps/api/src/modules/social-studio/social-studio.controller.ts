@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Headers, Param, Patch, Post, Query } from "@nestjs/common";
 import { CreateSocialPostDto } from "./dto/create-social-post.dto";
 import { UpsertCreatorProfileDto } from "./dto/upsert-creator-profile.dto";
+import { ReviewSocialPostDto } from "./dto/review-social-post.dto";
 import { SocialStudioService } from "./social-studio.service";
 
 @Controller()
@@ -40,7 +41,7 @@ export class SocialStudioController {
   }
 
   @Patch("admin/social/posts/:id/review")
-  reviewPost(@Headers("authorization") auth: string | undefined, @Param("id") id: string, @Body() input: { action: "APPROVE" | "REJECT"; notes?: string }) {
+  reviewPost(@Headers("authorization") auth: string | undefined, @Param("id") id: string, @Body() input: ReviewSocialPostDto) {
     return this.social.reviewPost(auth, id, input);
   }
 }
