@@ -79,6 +79,12 @@ enum ProductStatus {
   ARCHIVED
 }
 
+enum ProductImageStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id              String         @id @default(cuid())
   name            String?
@@ -223,9 +229,32 @@ model Product {
   cartItems             CartItem[]
   wishlistItems         WishlistItem[]
   orderItems            OrderItem[]
+  images                ProductImage[]
 
   @@index([sellerId, status, createdAt])
   @@index([categoryId, status])
+}
+
+
+model ProductImage {
+  id               String            @id @default(cuid())
+  productId        String
+  storageKey       String            @unique
+  contentType      String
+  sizeBytes        Int
+  altText          String
+  sortOrder        Int               @default(0)
+  isPrimary        Boolean           @default(false)
+  status           ProductImageStatus @default(PENDING)
+  rejectionReason  String?
+  reviewedAt       DateTime?
+  reviewedByUserId String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  product          Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, status, sortOrder])
+  @@index([status, createdAt])
 }
 
 model CartItem {
