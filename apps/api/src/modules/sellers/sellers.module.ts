@@ -10,9 +10,11 @@ import { AdminNotificationsController } from "./admin-notifications.controller";
 import { AdminNotificationsService } from "./admin-notifications.service";
 import { AdminOrdersController } from "./admin-orders.controller";
 import { AdminReturnsController } from "./admin-returns.controller";
+import { ProductImagesController } from "./product-images.controller";
+import { ProductImagesService } from "./product-images.service";
 
 @Module({
-  controllers: [SellerApplicationsController, SellerOrdersController, AdminSellerApplicationsController, AdminNotificationsController, AdminOrdersController, AdminReturnsController],
-  providers: [SellerApplicationsService, SellerOrdersService, AdminSellerApplicationsService, AdminNotificationsService, SellerOrderExpiryWorker],
+  controllers: [SellerApplicationsController, SellerOrdersController, AdminSellerApplicationsController, AdminNotificationsController, AdminOrdersController, AdminReturnsController, ProductImagesController],
+  providers: [SellerApplicationsService, SellerOrdersService, AdminSellerApplicationsService, AdminNotificationsService, SellerOrderExpiryWorker, ProductImagesService],
 })
 export class SellersModule {}
