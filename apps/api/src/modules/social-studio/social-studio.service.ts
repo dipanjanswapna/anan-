@@ -63,13 +63,18 @@ export class SocialStudioService {
   async publicProfile(handle: string) {
     const profile = await this.prisma.creatorProfile.findUnique({
       where: { handle: handle.toLowerCase() },
-      select: { handle: true, displayName: true, bio: true, avatarUrl: true, createdAt: true, posts: {
-        where: { status: "PUBLISHED" }, orderBy: { createdAt: "desc" }, take: 30,
-        select: { id: true, mediaType: true, mediaUrl: true, caption: true, createdAt: true },
-      } },
+      select: {
+        handle: true, displayName: true, bio: true, avatarUrl: true, createdAt: true,
+        user: { select: { isActive: true } },
+        posts: {
+          where: { status: "PUBLISHED" }, orderBy: { createdAt: "desc" }, take: 30,
+          select: { id: true, mediaType: true, mediaUrl: true, caption: true, createdAt: true },
+        },
+      },
     });
-    if (!profile) throw new NotFoundException("Creator not found.");
-    return profile;
+    if (!profile || !profile.user.isActive) throw new NotFoundException("Creator not found.");
+    const { user: _user, ...publicProfile } = profile;
+    return publicProfile;
   }
 
   async myPosts(authorization?: string) {
@@ -108,7 +113,8 @@ export class SocialStudioService {
     const parsed = Number(limit ?? 20);
     const take = Number.isInteger(parsed) ? Math.min(50, Math.max(1, parsed)) : 20;
     return this.prisma.socialPost.findMany({
-      where: { status: "PUBLISHED" }, orderBy: { createdAt: "desc" }, take,
+      where: { status: "PUBLISHED", creator: { user: { isActive: true } } },
+      orderBy: { createdAt: "desc" }, take,
       select: { id: true, mediaType: true, mediaUrl: true, caption: true, createdAt: true,
         creator: { select: { handle: true, displayName: true, avatarUrl: true } } },
     });
@@ -127,23 +133,25 @@ export class SocialStudioService {
   async reviewPost(authorization: string | undefined, id: string, input: { action: "APPROVE" | "REJECT"; notes?: string }) {
     const adminUserId = await this.adminContext(authorization);
     if (!["APPROVE", "REJECT"].includes(input.action) || (input.notes?.length ?? 0) > 1000) throw new BadRequestException("Invalid moderation decision.");
-    const result = await this.prisma.socialPost.updateMany({
-      where: { id, status: "PENDING_REVIEW" },
-      data: {
-        status: input.action === "APPROVE" ? "PUBLISHED" : "REJECTED",
-        moderationNotes: input.notes?.trim() || null, reviewedAt: new Date(), reviewedByUserId: adminUserId,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const result = await tx.socialPost.updateMany({
+        where: { id, status: "PENDING_REVIEW" },
+        data: {
+          status: input.action === "APPROVE" ? "PUBLISHED" : "REJECTED",
+          moderationNotes: input.notes?.trim() || null, reviewedAt: new Date(), reviewedByUserId: adminUserId,
+        },
+      });
+      if (!result.count) {
+        const exists = await tx.socialPost.findUnique({ where: { id }, select: { id: true } });
+        if (!exists) throw new NotFoundException("Post not found.");
+        throw new ConflictException("Only pending posts can be reviewed.");
+      }
+      const updated = await tx.socialPost.findUniqueOrThrow({ where: { id } });
+      await tx.adminAuditLog.create({ data: {
+        actorUserId: adminUserId, action: "SOCIAL_POST_" + input.action, targetType: "SocialPost", targetId: id,
+        metadata: { notes: input.notes?.trim() || null },
+      } });
+      return updated;
     });
-    if (!result.count) {
-      const exists = await this.prisma.socialPost.findUnique({ where: { id }, select: { id: true } });
-      if (!exists) throw new NotFoundException("Post not found.");
-      throw new ConflictException("Only pending posts can be reviewed.");
-    }
-    const updated = await this.prisma.socialPost.findUniqueOrThrow({ where: { id } });
-    await this.prisma.adminAuditLog.create({ data: {
-      actorUserId: adminUserId, action: "SOCIAL_POST_" + input.action, targetType: "SocialPost", targetId: id,
-      metadata: { notes: input.notes?.trim() || null },
-    } });
-    return updated;
   }
 }
