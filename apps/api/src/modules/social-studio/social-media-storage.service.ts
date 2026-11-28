@@ -71,7 +71,8 @@ export class SocialMediaStorageService {
       ...(cfg.sessionToken ? { "X-Amz-Security-Token": cfg.sessionToken } : {}),
     });
     // SigV4 canonical headers must not contain a trailing newline: the join below adds the required separator.
-    // Bind Content-Type into the signature so a client cannot change the declared media type after URL issuance.\n    const canonicalHeaders = `content-type:${input.contentType}\nhost:${cfg.host}`;\n    const canonicalRequest = ["PUT", `/${encodeKey(storageKey)}`, query, canonicalHeaders, "content-type;host", "UNSIGNED-PAYLOAD"].join("\n");
+    // Bind Content-Type into the signature so a client cannot change the declared media type after URL issuance.
+    const canonicalHeaders = `content-type:${input.contentType}\nhost:${cfg.host}`;\n    const canonicalRequest = ["PUT", `/${encodeKey(storageKey)}`, query, canonicalHeaders, "content-type;host", "UNSIGNED-PAYLOAD"].join("\n");
     const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, sha256(canonicalRequest)].join("\n");
     const signature = createHmac("sha256", this.signingKey(cfg.secretAccessKey, dateStamp, cfg.region)).update(stringToSign).digest("hex");
     return {
@@ -97,7 +98,8 @@ export class SocialMediaStorageService {
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
     const dateStamp = amzDate.slice(0, 8);
     const payloadHash = sha256("");
-    // Do not append a newline here; the canonical-request join supplies exactly one header separator.\n    const canonicalHeaders = `host:${cfg.host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}${cfg.sessionToken ? `\nx-amz-security-token:${cfg.sessionToken}` : ""}`;
+    // Do not append a newline here; the canonical-request join supplies exactly one header separator.
+    const canonicalHeaders = `host:${cfg.host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}${cfg.sessionToken ? `\nx-amz-security-token:${cfg.sessionToken}` : ""}`;
     const signedHeaders = `host;x-amz-content-sha256;x-amz-date${cfg.sessionToken ? ";x-amz-security-token" : ""}`;
     const canonicalRequest = ["HEAD", `/${encodeKey(input.storageKey)}`, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
     const scope = `${dateStamp}/${cfg.region}/s3/aws4_request`;
