@@ -53,9 +53,6 @@ export class AdminNotificationsService {
     }
     return { id, read: true };
   }
-}
-
- 
   async monitorOrders(authorization?: string, status?: string) {
     await this.authorize(authorization);
     const allowed = ["PENDING_SELLER_ACCEPTANCE", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
