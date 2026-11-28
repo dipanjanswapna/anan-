@@ -37,13 +37,17 @@ export class CustomerCommerceService {
     });
     const available = items.filter((item) => item.product.status === "APPROVED" && item.product.seller.status === "APPROVED" && item.product.category.isActive);
     const subtotalPaisa = available.reduce((sum, item) => sum + item.product.pricePaisa * BigInt(item.quantity), 0n);
-    return { items: available.map(({ product, ...item }) => ({ ...item, product: { ...product, pricePaisa: product.pricePaisa.toString() }, available: product.stockOnHand >= item.quantity, maxQuantity: product.stockOnHand })), subtotalPaisa: subtotalPaisa.toString(), itemCount: available.reduce((sum, item) => sum + item.quantity, 0) };
+    return { items: available.map(({ product, ...item }) => ({ ...item, product: { id: product.id, nameEn: product.nameEn, nameBn: product.nameBn, slug: product.slug, pricePaisa: product.pricePaisa.toString(), stockOnHand: product.stockOnHand, seller: { storeName: product.seller.storeName, storeSlug: product.seller.storeSlug } }, available: product.stockOnHand >= item.quantity, maxQuantity: product.stockOnHand })), subtotalPaisa: subtotalPaisa.toString(), itemCount: available.reduce((sum, item) => sum + item.quantity, 0) };
   }
 
   async addCartItem(authorization: string | undefined, productId: string, input: CartItemDto) {
     const userId = await this.customerId(authorization);
-    const product = await this.eligibleProduct(productId);
     const result = await this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.findFirst({
+        where: { id: productId, status: "APPROVED", seller: { status: "APPROVED" }, category: { isActive: true } },
+        select: { stockOnHand: true },
+      });
+      if (!product) throw new NotFoundException("This product is not available.");
       const existing = await tx.cartItem.findUnique({ where: { userId_productId: { userId, productId } } });
       const quantity = (existing?.quantity ?? 0) + input.quantity;
       if (product.stockOnHand < quantity) throw new BadRequestException("Requested quantity exceeds available stock.");
@@ -58,11 +62,17 @@ export class CustomerCommerceService {
 
   async updateCartItem(authorization: string | undefined, productId: string, input: CartItemDto) {
     const userId = await this.customerId(authorization);
-    const product = await this.eligibleProduct(productId);
-    if (input.quantity > product.stockOnHand) throw new BadRequestException("Requested quantity exceeds available stock.");
-    const existing = await this.prisma.cartItem.findUnique({ where: { userId_productId: { userId, productId } } });
-    if (!existing) throw new NotFoundException("Cart item not found.");
-    const item = await this.prisma.cartItem.update({ where: { id: existing.id }, data: { quantity: input.quantity } });
+    const item = await this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.findFirst({
+        where: { id: productId, status: "APPROVED", seller: { status: "APPROVED" }, category: { isActive: true } },
+        select: { stockOnHand: true },
+      });
+      if (!product) throw new NotFoundException("This product is not available.");
+      if (input.quantity > product.stockOnHand) throw new BadRequestException("Requested quantity exceeds available stock.");
+      const existing = await tx.cartItem.findUnique({ where: { userId_productId: { userId, productId } } });
+      if (!existing) throw new NotFoundException("Cart item not found.");
+      return tx.cartItem.update({ where: { id: existing.id }, data: { quantity: input.quantity } });
+    }, { isolationLevel: "Serializable" });
     return { item, message: "Cart quantity updated." };
   }
 
