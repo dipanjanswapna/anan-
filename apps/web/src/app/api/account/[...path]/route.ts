@@ -11,8 +11,13 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
     "me/addresses": "/customers/me/addresses",
   };
   const addressId = path.length === 3 && path[0] === "me" && path[1] === "addresses" ? path[2] : null;
-  const upstreamPath = routes[key] ?? (addressId && /^[a-zA-Z0-9_-]{1,64}$/.test(addressId) ? `/customers/me/addresses/${addressId}` : null);
-  if (!upstreamPath) return NextResponse.json({ message: "Not found." }, { status: 404 });
+  const addressRoute = addressId && /^[a-zA-Z0-9_-]{1,64}$/.test(addressId) ? `/customers/me/addresses/${addressId}` : null;
+  const allowed =
+    (key === "me" && ["GET", "PATCH"].includes(method)) ||
+    (key === "me/addresses" && ["GET", "POST"].includes(method)) ||
+    (addressRoute !== null && ["PATCH", "DELETE"].includes(method));
+  const upstreamPath = routes[key] ?? addressRoute;
+  if (!allowed || !upstreamPath) return NextResponse.json({ message: "Not found." }, { status: 404 });
 
   const token = request.cookies.get("anan_session")?.value;
   if (!token) return NextResponse.json({ message: "Please sign in to continue." }, { status: 401 });
