@@ -89,3 +89,9 @@ Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/
 - Legacy arbitrary external HTTPS media URL draft creation is disabled. Admin post approval remains required before feed/storefront publication.
 - No schema migration added in this increment. CI run 46140234885 is running; not merged, deployed, or storage-configured.
 - Malware scanning, media decoding/re-encoding, EXIF removal, codec/duration inspection, video transcoding, content classification, private-origin delivery, orphan cleanup and quotas remain outstanding.
+
+
+### Social Studio creator block UX follow-up
+- Added authenticated persisted block-status lookup; Creator Storefront Block/Unblock state now rehydrates after refresh.
+- Fixed PATCH unblock routing and ensured signed-in viewers cannot open a creator storefront they have blocked.
+- No migration required; uses the existing CreatorBlock relation. PR #29 remains open pending fresh CI and review.
