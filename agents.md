@@ -149,3 +149,14 @@ Handoff / status updates:
 ## 11. Safe parallelism
 Good: one agent builds an isolated Social Studio UI; another researches/designs a payment adapter without editing shared Prisma schema; another performs accessibility fixes in a separately assigned route set; another builds seller product-list UI.
 Unsafe: two agents editing schema/migrations simultaneously; multiple agents editing sellers.module.ts/app.module.ts; one changing API response while another independently changes its consumer; multiple agents editing customer-commerce service concurrently.
+
+
+## Active feature handoff — Social Studio (2026-11-28)
+- Owner: Social Studio feature agent only. Branch: `feat/social-studio-creator-foundation`. PR #29: https://github.com/dipanjanswapna/anan-/pull/29. Latest observed HEAD: `c7ecca82b542cd9752db67190dcb5f1faa13e457`. PR was open, one commit behind main and `mergeable=false`; re-fetch live PR and main before proceeding.
+- Primary owned paths: `apps/api/src/modules/social-studio/**`, Social Studio web routes/components/proxies under `apps/web/src/app/social/**` and `apps/web/src/app/api/social/**`, relevant Admin Social UI/API proxy, Social Studio Prisma models/migrations, `docs/social-studio.md`, and Social Studio sections in the root status/risk docs.
+- Shared hot spots: `apps/api/prisma/schema.prisma`, `apps/api/src/app.module.ts`, `apps/web/src/app/layout.tsx`, CI and shared auth/session helpers. Coordinate before changing; never overwrite concurrent changes or migrations.
+- Current branch includes creator profile/storefront; single IMAGE/VIDEO post; S3 presigned quarantine upload; moderation submission/review; post reports; creator block/unblock; follow/like/comments/save; notifications; cursor-paginated public/following feeds; per-user DB rate limits; initial creator analytics. Exact API contracts and limitations are in `docs/social-studio.md`.
+- Publication safety: quarantine URLs are explicitly rejected by Admin approval. Do not bypass this guard to make posts appear. Implement scanning/sanitization and controlled promotion before publication.
+- Product constraints remain: no carousel, paid sponsored placement, DMs or live commerce; no 18+ until genuine age assurance. Organic single-media posts only.
+- Validation truth: run 46144307456 passed for an earlier foundation commit, not latest HEAD. Latest-head CI, migration deployment, automated tests, browser/E2E, production S3/CloudFront and deployment are NOT verified.
+- Next best task: synchronize PR branch with current main using a safe merge/rebase after inspecting all changed paths and migrations; then add automated Social Studio API tests and get fresh CI green. Do not merge while stale/unmergeable or CI unverified.

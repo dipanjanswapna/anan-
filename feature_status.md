@@ -4,10 +4,10 @@
 
 ## Snapshot
 - Repository: `dipanjanswapna/anan-`; branch: `main`.
-- Main HEAD at snapshot: `718b85f` (docs: feature-isolated architecture and AI session handoff).
-- Session branch: `freebuff/6e0fc06bc657aeff874420c7`; delivery branch `feature/premium-storefront-ui`. Premium storefront, auth, cart/checkout, account and staff sign-in work is committed there and **unmerged/undeployed**.
-- Stack: pnpm 10 (no lockfile committed yet), Next.js 15/React 19, NestJS 10, PostgreSQL 16, Prisma 6, Docker Compose.
-- Latest evidence: PostgreSQL 19 (portable build), API and Web running locally; `prisma generate`, API `tsc --noEmit`, Web `tsc --noEmit`, `nest build` and `next build` passed. Real browser walkthrough of signup → OTP → cart → checkout → order, seller sign-in, admin sign-in and product approval, plus a 60-combination viewport audit (320–1920px) with no horizontal overflow.
+- Main HEAD at snapshot: `16da89fbf53e594b1ce08b840ddfcbae285f457f` (after PR #32 brand/UI refresh merge).
+- Latest feature: PR #27 Product Image Upload & Moderation, merged as `7f27c5d60aabcab442e8262858a1a1f618fbba7a`.
+- PR #27 CI run `46133765708`, job `140944437785`: completed successfully (Prisma validation/generation, API build, Web typecheck/build, Compose validation and dev image build).
+- Stack: pnpm, Next.js 15/React 19, NestJS 10, PostgreSQL 16, Prisma 6, Docker Compose.
 
 ## Status vocabulary
 - **Implemented/merged**: code on main.
@@ -20,82 +20,106 @@
 
 | Feature | Status | Implemented | Remaining / caveat |
 |---|---|---|---|
-| Workspace / CI | Partial | pnpm monorepo, Next/Nest apps, Compose, GitHub Actions | No lockfile; CI installs with `--no-frozen-lockfile`; no broad test suite. |
-| Storefront UI foundation | Implemented / visually verified | Shared header + footer, hero carousel (autoplay, swipe, arrows, dots, pause, reduced motion), real-data category art cards, product rails, quick view, premium product cards, catalogue filters (sort, price, stock, sale, category), pagination, category/deals/store/help pages, branded 404/error | Copy is English-first with Bangla product fields only; no full accessibility audit or formal screenshot baseline. |
-| Storefront / catalog | Partial → improved | Live product cards with approved images, search, filters, sorting, pagination, storefront pages | Hreflang/localised routes still absent; no saved-search or recommendation logic. |
+| Workspace / CI | Partial | pnpm monorepo, Next/Nest apps, Compose, GitHub Actions | No broad test suite; CI installs with `--no-frozen-lockfile`. |
+| Storefront / catalog | Partial | Responsive home, catalog, search/filter/pagination, product details, stores | Full bilingual content/routes, accessibility and broad E2E remain. |
 | Customer OTP / sessions | Partial | OTP challenges, hashed challenge/session tokens, HttpOnly cookie | Real SMS provider, abuse controls, device/session UI and 2FA remain. |
 | Profile / address book | Foundation | Profile and address CRUD, ownership/default handling | Bangladesh address master data and E2E remain. |
 | Seller application | Foundation | Application UI/API, duplicate checks, pending state | NID/KYC evidence, seller agreement and verification remain. |
 | Admin seller review | Partial | Admin/Staff review, permission check, audit, approval profile | Secure Admin bootstrap, 2FA and permission management UI remain. |
-| **Seller product management** | Implemented / not integration-tested | List with status counts and search, create draft, edit, submit, archive/restore, ownership checks, price/compare-at validation, stable slug generation, `/seller/products` UI with live summary and lifecycle panel, image manager linked from each product | Migration unapplied; no integration/E2E tests; live edits bypass re-review; no bulk actions, variants or soft-delete. |
-| **Admin product review** | Implemented / not integration-tested | `GET /admin/products`, `PATCH /admin/products/:id/review`, `PRODUCT_REVIEW` permission, audit log, rejection notes surfaced to seller, `/admin/products` console | Requires a Staff `PRODUCT_REVIEW` grant; approval does not require an approved image. |
 | Cart / wishlist | Foundation | Persistent records, approved-product checks, stock checks | Cart does not reserve stock; checkout revalidates. |
 | COD checkout / orders | Partial | Parent/child orders, snapshots, idempotency, transactional stock deduction | Online payments, full tax/invoice, comprehensive tests remain. |
 | Cancellation / audit | Partial | Customer cancellation, stock restore, OrderEvent | Wider policy matrix and tests remain. |
-| Seller order management | Partial | Seller dashboard, accept/reject, 24h deadline | Shipment updates exist in API; seller UI for courier entry is still thin. |
+| Seller order management | Partial | Seller dashboard, accept/reject, 24h deadline | Seller product CRUD and full fulfilment remain. |
 | Automatic expiry | Partial | Polling worker, transaction recheck, stock restore, Admin alert | Process-local worker; distributed lease/queue needed for multiple replicas. |
 | Shipping / tracking | Partial | Shipment data, seller-entered events, customer tracking, Admin monitoring | No live carrier API/webhook or carrier-verified status. |
 | Customer returns | Partial | Delivered-order return request, default 7-day window | Photo evidence, reverse pickup and tests remain. |
 | Seller return review | Partial | Seller approve/reject and notes | Reverse logistics and stock disposition remain. |
 | Admin return/dispute | Partial | Admin review states, audit, manual refund reference/method/amount | No payment transfer/provider refund or finance ledger. |
 | Admin notifications/orders | Partial | In-app notification inbox; read-only order monitoring | Email/SMS/push and mutating Admin order controls absent. |
-| Product media | Partial | S3 presigned upload, metadata/size HEAD check, seller UI, Admin moderation, approved images in catalogue/SEO, public gallery with thumbnails | Requires AWS config, CORS and CloudFront; no decode/re-encode, malware scan, EXIF strip, quota, orphan cleanup or sort/primary controls. |
-| Technical SEO | Partial | Metadata, robots, sitemap, OG image, llms.txt, Product JSON-LD, canonical + breadcrumb JSON-LD | Replace assumed domain; correct hreflang after localised routes; deploy validation remains. |
+| Product media | Partial | PR #27: S3 presigned upload, metadata/size HEAD check, seller UI, Admin moderation, approved images in catalog/SEO | Requires AWS config, CORS, CloudFront and migration deployment; image decoding/scanning/EXIF/quota/cleanup/gallery controls absent. |
+| Technical SEO | Partial | Metadata, robots, sitemap, OG image, llms.txt, Product JSON-LD | Replace assumed domain; correct hreflang after localized routes; deploy validation remains. |
 | Online payments | Planned | COD only | bKash, Nagad, SSLCommerz, signed webhooks, reconciliation and automated refunds absent. |
 | Inventory / warehouses | Partial foundation | Stock-on-hand and transactional mutations | Stock ledger, reservation, multiple warehouses/bins/transfers absent. |
 | Finance / commissions / payouts | Planned | Manual refund recording only | Commission ledger, seller balance and payout lifecycle absent. |
 | Coupons / loyalty | Planned | Product decisions only | Coupon engine and points ledger absent. |
-| Social Studio / Creator | Planned | Product decisions recorded | Feature, age assurance, moderation and safety systems not implemented. |
-| Legal / privacy / consent | Planned | Help centre states current behaviour only; no versioned acceptance flow | Legal documents, consent, export/deletion remain. |
+| Social Studio / Creator | Implemented on PR #29 branch; not yet merged | Creator profile/storefront, controlled S3 quarantine upload, moderation, reports/blocks, follow/like/comments/save, notifications, feeds, rate limits and initial analytics | No media scanning/sanitization/promotion, age assurance, appeals/escalation or production storage guarantees; latest-head CI and migration execution still unverified. |
+| Legal / privacy / consent | Planned | No complete versioned acceptance flow verified | Legal documents, consent, export/deletion remain. |
 | Analytics / BI | Planned | No production pipeline verified | Privacy-aware events and separate warehouse remain. |
 | AWS production | Planned / not deployed | Target architecture documented | ECS/RDS/S3/CloudFront/SQS/Terraform, secrets, monitoring, backup/DR not deployed/verified. |
-| QA / release readiness | Partial | Build/typecheck/schema/Compose/image CI; local typecheck and build evidence for this session | Unit/integration/E2E, security, load, accessibility, restore and UAT gates remain. |
+| QA / release readiness | Partial | Build/typecheck/schema/Compose/image CI | Unit/integration/E2E, security, load, accessibility, restore and UAT gates remain. |
 
-## Web routes (current inventory)
-
-- Public: `/`, `/products`, `/products/[slug]`, `/categories`, `/categories/[slug]`, `/deals`, `/stores`, `/stores/[storeSlug]`, `/help`, `/sell`.
-- Customer: `/login`, `/signup`, `/account`, `/cart`, `/wishlist`, `/checkout`, `/orders`, `/orders/[id]`.
-- Seller: `/seller/login`, `/seller/dashboard`, `/seller/products`, `/seller/products/new`, `/seller/products/[productId]`, `/seller/products/[productId]/images`.
-- Admin: `/admin` (operations index), `/admin/login`, `/admin/seller-applications`, `/admin/products`, `/admin/product-images`, `/admin/orders`, `/admin/returns`, `/admin/notifications`.
-- System: `/not-found`, route `error.tsx`, `robots.txt`, `sitemap.xml`, `opengraph-image`.
-- API proxies live under `apps/web/src/app/api`; raw session tokens remain server-side in the HttpOnly cookie.
+## Web routes (current high-level inventory)
+- Public: `/`, `/products`, `/products/[slug]`, `/stores/[storeSlug]`, `/sell`, `/social`, `/social/creators/[handle]`.
+- Customer: `/login`, `/account`, `/cart`, `/wishlist`, `/checkout`, `/orders`, `/orders/[id]`.
+- Seller: `/seller/login`, `/seller/dashboard`, `/seller/products/[productId]/images`.
+- Admin: `/admin/seller-applications`, `/admin/orders`, `/admin/notifications`, `/admin/returns`, `/admin/product-images`, `/admin/social`.
+- API proxies are under `apps/web/src/app/api`; keep raw session tokens server-side.
 
 ## API module inventory
-
-- `auth`: OTP challenge/verify, session read/revoke.
-- `catalog`: categories, product list/detail, storefront, store directory; list filters `search`, `category`, `sort`, `minPrice`, `maxPrice`, `inStock`, `onSale`.
+- `auth`: OTP/session.
+- `catalog`: public catalog.
 - `customers`: profile, addresses, cart, wishlist, checkout, orders, returns/tracking.
 - `health`: liveness/readiness.
-- `sellers`: seller applications/orders, Admin review/notifications/orders/returns, product media, **seller products** (list/create/read/update/submit/archive/restore) and **Admin product review**. This module remains a documented mixed boundary.
-
-## Database
-
-- Latest migration name: `20261128120000_admin_login`.
-- `20261128090000_seller_product_lifecycle` adds `Product.reviewNotes` and `Product.reviewedAt`.
-- `20261128120000_admin_login` adds `ADMIN_LOGIN` to `OtpPurpose` (append-only enum value) so ADMIN/STAFF can sign in with the existing OTP flow.
-- **P0 for fresh environments:** the repository's migration chain has no initial-schema migration — `prisma migrate deploy` on an empty database fails at `20261128000000_customer_orders` (`relation "User" does not exist`). The current schema was therefore validated locally with `prisma db push` plus `migrate resolve`; a reviewed baseline migration is required before any fresh deployment.
-- Both migrations were applied to the local verification database; no shared/staging/production environment has run them.
+- `sellers`: currently contains seller applications/orders, Admin review/notifications/orders/returns and product media. This mixed boundary is documented technical debt.
+- `social-studio`: creator profile, single-media posts and moderation (new isolated module).
 
 ## Recommended next sequence
-1. Apply and verify the new migration on disposable PostgreSQL, then test seller product lifecycle, ownership isolation, Admin review and public visibility end to end.
-2. Commit a lockfile and switch CI to `--frozen-lockfile`; add integration tests for money, ownership and lifecycle transitions.
-3. Review the new storefront visually on the preview environment; run an accessibility pass on catalogue filters, gallery and seller forms.
-4. Product media hardening: private S3 + CloudFront OAC, credential-provider/ECS role, decode/re-encode + malware scan, quotas, orphan cleanup, sort/primary controls.
-5. Add payment domain and one sandbox provider with signed webhook + idempotent reconciliation.
-6. Add inventory ledger/reservations and finance/commission ledger before payouts.
-7. Integrate courier adapters and signed webhooks.
-8. Complete Admin bootstrap, 2FA, RBAC management and security audit.
-9. Build Social Studio only with age assurance and trust/safety operations.
+1. Product media hardening: private S3 + CloudFront OAC, credential-provider strategy/ECS role, image decode/re-encode + malware scan, quotas, orphan cleanup, migration runbook.
+2. Improve CI and add unit/integration/E2E tests before expanding critical flows.
+3. Build seller product list/create/edit and connect image manager.
+4. Add payment domain and one sandbox provider with signed webhook + idempotent reconciliation.
+5. Add inventory ledger/reservations and finance/commission ledger before payouts.
+6. Integrate courier adapters and signed webhooks.
+7. Complete Admin bootstrap, 2FA, RBAC management and security audit.
+8. Build Social Studio only with age assurance and trust/safety operations.
 
 ## Update protocol
-Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/`. Record PR, commit, CI evidence, migrations and external setup separately. Never mark production-ready from CI or a local build alone.
+Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/`. Record PR, commit, CI evidence, migrations and external setup separately. Never mark production-ready from CI alone.
 
-## Session update — premium storefront & responsive pass
 
-- Homepage hero carousel (autoplay, swipe, keyboard, pause, reduced motion), real-count category cards, product rails, promo and buyer-guide sections; empty catalogue state instead of fake data.
-- Premium product card with wishlist, quick view and add-to-cart plus a shared cart-update event; rebuilt product detail with gallery/lightbox, purchase actions, sticky mobile bar and honest reviews empty state.
-- Sign up (`/signup`), admin sign-in (`/admin/login`, `ADMIN_LOGIN` OTP) and `/admin` operations index.
-- Rebuilt cart, three-step COD checkout with idempotency and address creation, account dashboard, orders list, wishlist, order confirmation banner.
-- Seller sign-in now normalises local mobile numbers to E.164 (fixes silent “no code sent” for `017…` input).
-- Verified: signup → cart → checkout → order, wishlist round trip, catalogue filters/sort, seller sign-in and product list, admin sign-in and approval, 60 viewport checks across public and authenticated pages (320–1920px) with no horizontal overflow.
-- Not verified: seller product create/edit/image upload, order cancellation/returns, accessibility audit, automated tests. Fresh-environment migrations remain blocked (see P0 in `known_issues.md`).
+## Active parallel development
+- Social Studio branch: `feat/social-studio-creator-foundation` (PR pending). Initial Creator Foundation includes profile/storefront, single-media drafts, moderation submission/review and public feed. See `docs/social-studio.md`.
+
+
+### Social Studio Trust & Safety update (branch in progress)
+- Added report reason/status enums, `SocialPostReport` and `CreatorBlock` models plus migration `20261128113000_social_trust_safety`.
+- Added authenticated post reporting, creator block/unblock, feed exclusion for blocked creators, Admin report queue and transactional report disposition/audit.
+- Added public feed Report control, creator storefront Block control and Admin Report Review UI.
+- Still not merged or deployed; CI, migration execution, integration tests and browser verification pending. Controlled media pipeline, age assurance, appeals, evidence retention and operational escalation remain.
+
+
+### Social Studio controlled upload increment (PR #29 branch)
+- Added direct-to-S3 presigned PUT flow scoped to the authenticated Creator Profile; generated keys live under `social/quarantine/<creator-profile-id>/`.
+- Creator UI supports one JPEG/PNG/WebP image (10 MiB max) or MP4/WebM video (100 MiB max), followed by signed S3 HEAD verification before a DRAFT post is created.
+- Legacy arbitrary external HTTPS media URL draft creation is disabled. Admin post approval remains required before feed/storefront publication.
+- No schema migration added in this increment. CI run 46140234885 succeeded; follow-up block-state CI run 46144057851 is running. Not merged, deployed, or storage-configured.
+- Malware scanning, media decoding/re-encoding, EXIF removal, codec/duration inspection, video transcoding, content classification, private-origin delivery, orphan cleanup and quotas remain outstanding.
+
+
+### Social Studio creator block UX follow-up
+- Added authenticated persisted block-status lookup; Creator Storefront Block/Unblock state now rehydrates after refresh.
+- Fixed PATCH unblock routing and ensured signed-in viewers cannot open a creator storefront they have blocked.
+- No migration required; uses the existing CreatorBlock relation. PR #29 remains open pending fresh CI and review.
+
+
+## Social Studio — handoff snapshot (2026-11-28, PR #29; NOT merged)
+- Active branch: `feat/social-studio-creator-foundation`.
+- Latest observed feature HEAD: `c7ecca82b542cd9752db67190dcb5f1faa13e457`.
+- PR: https://github.com/dipanjanswapna/anan-/pull/29
+- PR base snapshot observed: `718b85f0d03d6c67e80d66d56f7305ff41e64359`; PR was reported one commit behind and `mergeable=false`. Re-check both SHAs before any work/merge.
+- Scope now implemented on the feature branch: creator profile/storefront; one IMAGE or VIDEO per post; controlled S3 presigned upload into creator-scoped quarantine; submit/review flow; Admin/Staff report and comment moderation; post reporting; creator block/unblock and blocked-creators page; follow/unfollow, like/unlike, comments (pending review), save/unsave; in-app notifications; public and following feeds with cursor pagination; authenticated action rate limits; creator summary analytics.
+- Safety guard: Admin cannot publish a post while its media URL remains under `social/quarantine/`. This intentionally fails closed; no media scanning/promotion pipeline exists yet.
+- Rate limits (authenticated user, fixed-minute DB buckets): follow 20/min, like 60/min, comment 8/min, report 5/min. No IP/device/anonymous edge throttling.
+- Analytics: followers, 30-day new followers, content status counts, 30-day likes/approved comments, latest 10 posts' like/comment totals. Reach/impressions are NOT implemented.
+- Data migrations on branch include Social Studio foundation, trust/safety, engagement and rate-limit additions. Inspect exact migration directory and schema before adding any further migration; do not assume any have been deployed.
+- Validation: an earlier foundation CI run succeeded (run 46144307456) but predates latest engagement/feed/rate-limit/analytics changes. No latest-head CI success is verified. No DB migration execution, browser/E2E, production storage config or deployment is verified.
+- Read `docs/social-studio.md` for API routes, behavior, storage settings and remaining limitations.
+- Next tasks, in order: (1) synchronize with latest main safely and re-check migration ordering/baseline; (2) add automated unit/integration tests and get latest-head CI green; (3) implement private quarantine + scanner/sanitizer + image re-encode/EXIF stripping + video codec/duration validation/transcoding + approved-object promotion; (4) add view/impression event model and privacy-aware analytics; (5) add appeals/evidence/escalation/retention and operational moderation workflow.
+- Do not merge until PR is current with main, migration chain is reviewed, latest CI is green, security review passes and mergeability is confirmed. Never describe Social Studio as production-ready.
+
+
+## Current verification update (2026-11-28)
+- PR #32 Brand/UI refresh was merged to `main` as `16da89fbf53e594b1ce08b840ddfcbae285f457f`; its CI run `46146817826` completed successfully.
+- Social Studio remains on PR #29 branch and is not merged. The branch has been identified as diverged from current `main`; do not use the old ahead/behind figures above as current status. Synchronize and verify current branch before merge.
+- Social Studio upload is a quarantine-only first step. MIME/size/HEAD checks are not malware scanning or media sanitization. The S3 bucket and any CDN path must keep quarantine objects private. Keep 18+ disabled until age assurance exists.
+- `.env.example` escaped-newline formatting defect was corrected in the current PR branch; re-check CI after branch synchronization.

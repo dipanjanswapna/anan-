@@ -10,13 +10,6 @@
 
 ## Open risks
 
-### P0 — Migration chain cannot build a fresh database
-- **Area:** Database / release.
-- **Evidence:** Running `prisma migrate deploy` against an empty PostgreSQL 19 database stops at `20261128000000_customer_orders` with `relation "User" does not exist`. No migration in `apps/api/prisma/migrations` creates the base tables (User, SellerProfile, Category, Product, …); they were evidently provisioned with `db push` before the migration history started.
-- **Impact:** A new environment (staging, production, disaster recovery, CI) cannot be created from the repository alone. Local verification this session used `prisma db push` + `migrate resolve`, which is not acceptable for release.
-- **Action:** Generate and review a baseline migration representing the pre-`customer_orders` schema (or squash into a documented initial migration with an explicit cutover plan for existing databases), then replay the whole chain against a disposable PostgreSQL in CI. `db push` must never be used for production.
-- **State:** Open; discovered this session. Not fixed because migration history changes need a deployment/ownership decision.
-
 ### P1 — No verified production deployment or recovery exercise
 - **Area:** AWS / operations.
 - **Evidence:** Repository contains local Compose and target AWS architecture; no deployed ECS/RDS/CloudFront environment or backup-restore/DR exercise is recorded.
@@ -33,10 +26,10 @@
 
 ### P1 — Admin bootstrap and strong authentication incomplete
 - **Area:** Identity / Admin.
-- **Evidence:** `ADMIN_LOGIN` OTP sign-in and `/admin/login` now exist and were verified end to end, but secure provisioning, a second factor, recovery, and a permission-management UI are still absent. OTP remains the only admin factor.
-- **Impact:** Privileged account lifecycle is not production-ready; a compromised SIM is sufficient to sign in.
-- **Action:** Break-glass bootstrap, MFA, recovery, session/device revocation, permission-management UI and audit review screens.
-- **State:** Open; sign-in path partially closed this session.
+- **Evidence:** Protected Admin/Staff endpoints and permission checks exist; secure provisioning, password + authenticator 2FA, recovery and permission-management UI are not verified complete.
+- **Impact:** Privileged account lifecycle is not production-ready.
+- **Action:** Break-glass bootstrap, MFA, recovery, session/device revocation and audit controls.
+- **State:** Open.
 
 ### P1 — Product media needs AWS configuration and safe image processing
 - **Area:** Product media.
@@ -94,26 +87,18 @@
 - **Action:** Apply ownership rules in `agents.md`; extract bounded modules incrementally with contract/regression tests. Avoid big-bang refactor.
 - **State:** Open; mitigation documented.
 
-### P2 — Seller product lifecycle lacks integration tests and environment verification
-- **Area:** Seller products / QA.
-- **Evidence:** Seller product list/create/edit/submit/archive/restore and Admin `POST`-review endpoints were added with ownership and validation rules, but no PostgreSQL was available in the authoring environment. The append-only migration was not applied, and no integration or E2E test exercises the flow.
-- **Impact:** A defect in a lifecycle transition, permission check or migration could reach production unnoticed. Compilation is not flow verification.
-- **Action:** Apply the migration to disposable PostgreSQL; test seller ownership isolation, price/compare-at validation, submit-without-image rejection, Admin permission failure, approve/reject audit rows, and public catalogue visibility after approval.
-- **State:** Open; feature merged, verification pending.
+### P2 — Seller product CRUD/list workflow incomplete
+- **Area:** Seller products.
+- **Evidence:** Product media route is addressed by known product ID; complete seller product list/create/edit lifecycle is not verified.
+- **Impact:** Media feature is not discoverable through a full seller product workflow.
+- **Action:** Seller product list/create/edit and link media management from product detail.
+- **State:** Open.
 
-### P2 — Live product edits bypass re-review
-- **Area:** Catalogue integrity.
-- **Evidence:** Editing an `APPROVED` product keeps it live; only the Admin product-review step gates first publication.
-- **Impact:** A seller can change price, copy or stock on a public listing without a fresh review, and a previously reviewed description can become misleading.
-- **Action:** Decide the policy: either return approved products to `PENDING_APPROVAL` on copy/media changes, or add a moderation flag and periodic re-review. Document the chosen rule in the seller product doc.
-- **State:** Open; deliberate trade-off, needs product sign-off.
-
-### P3 — Product gallery is read-only
+### P2 — Product gallery controls incomplete
 - **Area:** Catalog / media.
-- **Evidence:** Public product pages now render every approved image in an accessible gallery with thumbnails. Sellers cannot yet reorder images, choose a primary image, or delete an image, and Admin cannot change the primary selection.
-- **Impact:** Display order is fixed by upload order; a rejected or poor first image can only be fixed by approval of a new one.
-- **Action:** Add seller sort/primary controls with server-side ownership checks and an Admin override.
-- **State:** Partially resolved; gallery shipped, controls open.
+- **Evidence:** Public detail uses first approved image; ordering/primary controls and gallery are not complete.
+- **Action:** Gallery, sort/primary controls and server-side authorization.
+- **State:** Open.
 
 ### P2 — SEO domain and localization require correction
 - **Area:** SEO.
@@ -135,9 +120,6 @@
 - **State:** Mitigation added in this PR.
 
 ## Not verified / do not claim
-- Seller product create/edit/submit, Admin product approval and the new catalogue filters have not been exercised against a real API or PostgreSQL.
-- Migration `20261128090000_seller_product_lifecycle` has not been applied to any environment.
-- The new storefront routes and seller/admin screens have not been reviewed in a browser, at multiple viewports, or with assistive technology.
 - Production AWS credentials, bucket, CloudFront distribution, SMS provider or courier credentials are configured.
 - Production database migrations have been applied.
 - Real payment collection or automated refunds work.
@@ -146,3 +128,53 @@
 
 ## Resolution policy
 Retain a short resolved entry with issue, former severity, PR/commit, tests/CI evidence and remaining operational action. Do not erase history without evidence.
+
+
+### P2 — Social Studio trust, safety and media pipeline incomplete
+- **Area:** Social Studio / user-generated content.
+- **Evidence:** Initial Creator Foundation is under development on `feat/social-studio-creator-foundation`; media is accepted as an HTTPS URL and post approval is a basic Admin review workflow.
+- **Impact:** This is not launch-ready UGC infrastructure. External media is not uploaded to controlled storage, decoded/re-encoded, malware scanned or checked for ownership/codec/duration. Age assurance, reporting, blocking/muting, appeals, evidence retention, escalation and staffed response are absent.
+- **Action:** Keep 18+ content disabled until genuine age assurance exists. Add controlled media upload/processing, user reporting and block/mute controls, moderation policy tooling, audit/evidence retention, escalation/SLA and operational staffing before public launch.
+- **State:** Open; initial foundation in progress, not merged or deployed.
+
+
+### P2 — Social Studio trust and media controls remain incomplete
+- **Area:** Social Studio / user-generated content.
+- **Evidence:** The active Social Studio feature branch now includes post reporting, creator block/unblock, feed filtering for blocked creators, and Admin report disposition with audit. It still accepts externally hosted HTTPS media URLs.
+- **Impact:** Report/block primitives do not constitute a full Trust & Safety operation; harmful media may evade detection and blocked creators can still be opened directly by URL.
+- **Action:** Add controlled upload and media processing/scanning, age assurance before any 18+ features, creator profile block-aware handling, appeals, evidence retention, abuse controls, escalation and staffed response. Add DB integration/E2E tests and verify migration deployment.
+- **State:** Partial implementation on PR #29 branch; not merged/deployed; CI pending.
+
+
+### P2 — Social Studio media upload is only a first storage gate
+- **Area:** Social Studio / user-generated content.
+- **Evidence:** PR #29 branch now supports authenticated presigned S3 uploads and signed HEAD checks for JPEG/PNG/WebP images (10 MiB) and MP4/WebM videos (100 MiB). External URL draft creation is disabled.
+- **Impact:** MIME/size/HEAD verification does not detect malware, spoofed media, unsafe visual/audio content or malicious payloads. No decoding/re-encoding, EXIF removal, codec/duration inspection, transcoding, quarantine-to-approved promotion, private delivery guarantee, quotas or orphan cleanup exists. If the configured bucket/CDN exposes the quarantine prefix, an uploaded object may be directly reachable even while its post is not published in ANAN feeds.
+- **Action:** Configure a private quarantine origin, implement malware/content scanning and media normalization, enforce video duration/codec, promote only approved assets to a separately controlled delivery origin, add quotas/rate limits/orphan cleanup, then complete security and integration testing.
+- **State:** Partial implementation on PR #29 branch; not merged/deployed; CI run 46140234885 pending at documentation update.
+
+
+### P2 — Social creator blocking is a first-pass viewer control
+- **Area:** Social Studio / Creator safety.
+- **Evidence:** PR #29 adds persisted block-status lookup, reload-safe Block/Unblock UI, authenticated creator storefront hiding for the blocker, and public-feed filtering.
+- **Impact:** This is not a platform-wide moderation ban. It does not stop the blocked creator from posting, contacting users outside this feature, or viewing public content while signed out/using another account. Appeals, evidence retention, rate limits and safety operations remain incomplete.
+- **Action:** Keep block semantics scoped and explicit; add integration tests, report escalation, abuse controls and staffed moderation before public launch.
+- **State:** Partial implementation on PR #29; CI pending.
+
+
+## Social Studio — current PR #29 handoff clarification (2026-11-28)
+The older Social Studio entries above describe earlier intermediate commits. Current observed branch HEAD is `c7ecca82b542cd9752db67190dcb5f1faa13e457` on `feat/social-studio-creator-foundation`; PR #29 remains open, not merged, and was observed as one commit behind main with `mergeable=false`. Re-check live state before acting.
+
+Implemented on branch (not main): creator profile/storefront; one-image-or-video posts; presigned S3 upload to quarantine with HEAD MIME/size verification; submit/admin review; post reports and creator block/unblock; report and comment moderation; follow/like/comment/save; in-app notifications; public + following cursor feeds; per-user fixed-minute DB rate limits; creator summary analytics. Admin approval fails closed while media URL remains under `social/quarantine/`.
+
+Open launch blockers: no malware scanning or media sanitization/re-encoding/EXIF removal; no video codec/duration inspection or transcoding; no quarantine-to-approved promotion or verified private media delivery; no IP/device/anonymous abuse controls; no appeal/evidence retention/escalation/staffed SLA; no genuine age assurance; no reach/impression tracking; no automated tests or verified latest-head CI; migrations have not been verified applied. The bucket/CDN must not expose quarantine objects publicly. Keep 18+ content disabled.
+
+CI evidence: run 46144307456 succeeded for an earlier foundation commit only; it is not evidence for current HEAD. Latest-head CI, database integration tests, browser/E2E, security review and deployment remain unverified.
+
+
+### P2 — Social Studio branch synchronization and verification pending (2026-11-28)
+- **Area:** Social Studio / release engineering.
+- **Evidence:** PR #29 feature branch is based on an older `main` commit and GitHub compare reports it diverged from current `main`. No workflow run is currently associated with its latest observed head. `.env.example` had a literal escaped newline in a comment; this was corrected on the feature branch.
+- **Impact:** The feature cannot safely be merged until its branch is synchronized and fresh CI plus migration review pass.
+- **Action:** Merge current `main` into the feature branch without discarding either side; run Prisma/API/Web/Compose CI; inspect migration baseline and add automated coverage; then merge only if GitHub reports mergeable and CI is green.
+- **State:** Open; branch synchronization and fresh validation pending.
