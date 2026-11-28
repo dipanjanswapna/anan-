@@ -280,16 +280,20 @@ export class SocialStudioService {
     const creator = await this.prisma.creatorProfile.findFirst({ where: { handle: handle.toLowerCase(), user: { isActive: true } }, select: { id: true, userId: true, displayName: true } });
     if (!creator) throw new NotFoundException("Creator not found.");
     if (creator.userId === followerUserId) throw new BadRequestException("You cannot follow yourself.");
-    await this.prisma.$transaction(async (tx) => {
-      await tx.creatorFollow.upsert({
-        where: { followerUserId_creatorProfileId: { followerUserId, creatorProfileId: creator.id } },
-        create: { followerUserId, creatorProfileId: creator.id }, update: {},
-      });
-      await tx.socialNotification.create({ data: {
-        recipientUserId: creator.userId, actorUserId: followerUserId, type: "NEW_FOLLOW",
-        message: "Someone started following your creator profile.",
-      } });
-    });
+    const existing = await this.prisma.creatorFollow.findUnique({ where: { followerUserId_creatorProfileId: { followerUserId, creatorProfileId: creator.id } }, select: { id: true } });
+    if (!existing) {
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          await tx.creatorFollow.create({ data: { followerUserId, creatorProfileId: creator.id } });
+          await tx.socialNotification.create({ data: {
+            recipientUserId: creator.userId, actorUserId: followerUserId, type: "NEW_FOLLOW",
+            message: "Someone started following your creator profile.",
+          } });
+        });
+      } catch (error) {
+        if (!(typeof error === "object" && error !== null && "code" in error && error.code === "P2002")) throw error;
+      }
+    }
     return { following: true, handle: handle.toLowerCase() };
   }
 
