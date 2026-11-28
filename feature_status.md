@@ -60,7 +60,8 @@
 - `catalog`: public catalog.
 - `customers`: profile, addresses, cart, wishlist, checkout, orders, returns/tracking.
 - `health`: liveness/readiness.
-- `sellers`: currently contains seller applications/orders, Admin review/notifications/orders/returns and product media. This mixed boundary is documented technical debt.\n- `social-studio`: creator profile, single-media posts and moderation (new isolated module).
+- `sellers`: currently contains seller applications/orders, Admin review/notifications/orders/returns and product media. This mixed boundary is documented technical debt.
+- `social-studio`: creator profile, single-media posts and moderation (new isolated module).
 
 ## Recommended next sequence
 1. Product media hardening: private S3 + CloudFront OAC, credential-provider strategy/ECS role, image decode/re-encode + malware scan, quotas, orphan cleanup, migration runbook.
@@ -74,7 +75,11 @@
 
 ## Update protocol
 Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/`. Record PR, commit, CI evidence, migrations and external setup separately. Never mark production-ready from CI alone.
-\n\n## Active parallel development\n- Social Studio branch: `feat/social-studio-creator-foundation` (PR pending). Initial Creator Foundation includes profile/storefront, single-media drafts, moderation submission/review and public feed. See `docs/social-studio.md`.\n
+
+
+## Active parallel development
+- Social Studio branch: `feat/social-studio-creator-foundation` (PR pending). Initial Creator Foundation includes profile/storefront, single-media drafts, moderation submission/review and public feed. See `docs/social-studio.md`.
+
 
 ### Social Studio Trust & Safety update (branch in progress)
 - Added report reason/status enums, `SocialPostReport` and `CreatorBlock` models plus migration `20261128113000_social_trust_safety`.
