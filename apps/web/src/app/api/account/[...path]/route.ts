@@ -33,7 +33,7 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
     (key === "me/wishlist" && method === "GET") ||
     (key === "me/checkout" && method === "POST") ||
     (key === "me/orders" && method === "GET") ||
-    (orderRoute !== null && method === "GET") ||
+    (orderRoute !== null && ["GET", "POST"].includes(method)) ||
     (wishlistItemRoute !== null && ["POST", "DELETE"].includes(method));
   const upstreamPath = routes[key] ?? addressRoute ?? commerceCollectionRoutes[key] ?? cartItemRoute ?? wishlistItemRoute ?? orderRoute;
   if (!allowed || !upstreamPath) return NextResponse.json({ message: "Not found." }, { status: 404 });
