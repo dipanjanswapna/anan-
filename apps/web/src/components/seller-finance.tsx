@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Banknote, Clock3, Wallet } from "lucide-react";
 
 type FinanceData = {
@@ -22,7 +22,7 @@ export function SellerFinance() {
   const [message,setMessage]=useState("");
   async function load(){const r=await fetch("/api/seller/finance",{cache:"no-store"});if(r.status===401){window.location.assign("/seller/login");return;}const d=await r.json();if(!r.ok)throw new Error(d.message||"Unable to load seller finance.");setData(d);}
   useEffect(()=>{void load().catch(e=>setError(e instanceof Error?e.message:"Unable to load finance.")).finally(()=>setLoading(false));},[]);
-  async function requestPayout(e:React.FormEvent){e.preventDefault();setBusy(true);setError("");setMessage("");try{const r=await fetch("/api/seller/finance/payout-requests",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({payoutMethod:method,payoutDestination:destination})});const d=await r.json();if(!r.ok)throw new Error(d.message||"Payout request failed.");setMessage(d.message||"Payout request submitted.");setDestination("");await load();}catch(e){setError(e instanceof Error?e.message:"Payout request failed.");}finally{setBusy(false);}}
+  async function requestPayout(e:FormEvent){e.preventDefault();setBusy(true);setError("");setMessage("");try{const r=await fetch("/api/seller/finance/payout-requests",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({payoutMethod:method,payoutDestination:destination})});const d=await r.json();if(!r.ok)throw new Error(d.message||"Payout request failed.");setMessage(d.message||"Payout request submitted.");setDestination("");await load();}catch(e){setError(e instanceof Error?e.message:"Payout request failed.");}finally{setBusy(false);}}
   if(loading)return <section className="container-shell py-12 text-center text-sm text-[#82788f]">Loading seller finance…</section>;
   if(!data)return <section className="container-shell py-8"><p role="alert" className="text-sm text-rose-700">{error||"Finance is unavailable."}</p></section>;
   return <section className="container-shell pb-12"><div className="mt-9 flex items-center gap-2"><Wallet size={19} className="text-brand-700"/><h2 className="text-xl font-extrabold text-[#281743]">Earnings & payouts</h2></div>
