@@ -57,6 +57,14 @@ enum PaymentMethod {
   CASH_ON_DELIVERY
 }
 
+enum ReturnRequestStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  ITEM_RECEIVED
+  REFUNDED
+}
+
 enum PaymentStatus {
   UNPAID
   PAID
@@ -284,6 +292,7 @@ model SellerOrder {
   seller            SellerProfile     @relation(fields: [sellerId], references: [id], onDelete: Restrict)
   items             OrderItem[]
   shipment          CourierShipment?
+  returnRequest     ReturnRequest?
 
   @@unique([orderId, sellerId])
   @@index([sellerId, status, createdAt])
@@ -408,4 +417,22 @@ model ShipmentEvent {
   shipment    CourierShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
 
   @@index([shipmentId, occurredAt])
+}
+
+
+model ReturnRequest {
+  id             String              @id @default(cuid())
+  sellerOrderId  String              @unique
+  customerId     String
+  reason         String
+  details        String?
+  status         ReturnRequestStatus @default(REQUESTED)
+  sellerNotes    String?
+  reviewedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  sellerOrder    SellerOrder         @relation(fields: [sellerOrderId], references: [id], onDelete: Restrict)
+  customer       User                @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
 }
