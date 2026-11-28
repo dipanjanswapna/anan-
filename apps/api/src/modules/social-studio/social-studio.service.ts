@@ -109,32 +109,61 @@ export class SocialStudioService {
     return this.prisma.socialPost.findUnique({ where: { id } });
   }
 
-  async publicFeed(limit?: string, authorization?: string) {
+  private async feedViewer(authorization?: string) {
+    const match = authorization?.match(/^Bearer\\s+([A-Za-z0-9_-]{40,})$/i);
+    if (!match) return null;
+    const session = await this.prisma.customerSession.findFirst({
+      where: { tokenHash: sha256(match[1]), revokedAt: null, expiresAt: { gt: new Date() }, user: { isActive: true } },
+      select: { userId: true },
+    });
+    return session?.userId ?? null;
+  }
+
+  private async feedBlockFilter(userId: string | null) {
+    if (!userId) return [];
+    const [blockedByMe, blockingMe] = await Promise.all([
+      this.prisma.creatorBlock.findMany({ where: { blockerUserId: userId }, select: { creatorProfileId: true } }),
+      this.prisma.creatorBlock.findMany({ where: { creator: { userId } }, select: { blockerUserId: true } }),
+    ]);
+    const blockedCreatorIds = blockedByMe.map((item) => item.creatorProfileId);
+    const blockingUserIds = blockingMe.map((item) => item.blockerUserId);
+    const blockerProfiles = blockingUserIds.length
+      ? await this.prisma.creatorProfile.findMany({ where: { userId: { in: blockingUserIds } }, select: { id: true } })
+      : [];
+    return [...new Set([...blockedCreatorIds, ...blockerProfiles.map((item) => item.id)])];
+  }
+
+  async publicFeed(limit?: string, authorization?: string, cursor?: string) {
     const parsed = Number(limit ?? 20);
     const take = Number.isInteger(parsed) ? Math.min(50, Math.max(1, parsed)) : 20;
-    const match = authorization?.match(/^Bearer\s+([A-Za-z0-9_-]{40,})$/i);
-    let blockedCreatorIds: string[] = [];
-    if (match) {
-      const session = await this.prisma.customerSession.findFirst({
-        where: { tokenHash: sha256(match[1]), revokedAt: null, expiresAt: { gt: new Date() }, user: { isActive: true } },
-        select: { userId: true },
-      });
-      if (session) {
-        const blocks = await this.prisma.creatorBlock.findMany({
-          where: { blockerUserId: session.userId }, select: { creatorProfileId: true },
-        });
-        blockedCreatorIds = blocks.map((block) => block.creatorProfileId);
-      }
-    }
-    return this.prisma.socialPost.findMany({
-      where: {
-        status: "PUBLISHED", creator: { user: { isActive: true } },
-        ...(blockedCreatorIds.length ? { creatorProfileId: { notIn: blockedCreatorIds } } : {}),
-      },
-      orderBy: { createdAt: "desc" }, take,
+    const blockedCreatorIds = await this.feedBlockFilter(await this.feedViewer(authorization));
+    const items = await this.prisma.socialPost.findMany({
+      where: { status: "PUBLISHED", creator: { user: { isActive: true } },
+        ...(blockedCreatorIds.length ? { creatorProfileId: { notIn: blockedCreatorIds } } : {}) },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: take + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       select: { id: true, mediaType: true, mediaUrl: true, caption: true, createdAt: true,
         creator: { select: { handle: true, displayName: true, avatarUrl: true } } },
     });
+    return { items: items.slice(0, take), nextCursor: items.length > take ? items[take - 1]?.id ?? null : null };
+  }
+
+  async followingFeed(authorization: string | undefined, limit?: string, cursor?: string) {
+    const userId = await this.userContext(authorization);
+    const parsed = Number(limit ?? 20);
+    const take = Number.isInteger(parsed) ? Math.min(50, Math.max(1, parsed)) : 20;
+    const blockedCreatorIds = await this.feedBlockFilter(userId);
+    const follows = await this.prisma.creatorFollow.findMany({ where: { followerUserId: userId }, select: { creatorProfileId: true } });
+    const followedIds = follows.map((item) => item.creatorProfileId).filter((id) => !blockedCreatorIds.includes(id));
+    if (!followedIds.length) return { items: [], nextCursor: null };
+    const items = await this.prisma.socialPost.findMany({
+      where: { status: "PUBLISHED", creatorProfileId: { in: followedIds }, creator: { user: { isActive: true } } },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: take + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      select: { id: true, mediaType: true, mediaUrl: true, caption: true, createdAt: true,
+        creator: { select: { handle: true, displayName: true, avatarUrl: true } } },
+    });
+    return { items: items.slice(0, take), nextCursor: items.length > take ? items[take - 1]?.id ?? null : null };
   }
 
   async moderationQueue(authorization: string | undefined, status?: string) {
