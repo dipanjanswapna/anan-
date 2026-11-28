@@ -88,3 +88,82 @@ export class SellerOrdersService {
     };
   }
 }
+
+ 
+  async upsertShipment(authorization: string | undefined, sellerOrderId: string, input: { courierName: string; trackingNumber: string; trackingUrl?: string; estimatedDeliveryAt?: string }) {
+    const { seller, userId } = await this.sellerContext(authorization);
+    const order = await this.prisma.sellerOrder.findFirst({
+      where: { id: sellerOrderId, sellerId: seller.id },
+      select: { id: true, status: true },
+    });
+    if (!order) throw new NotFoundException("Seller order not found.");
+    if (!["ACCEPTED", "PROCESSING", "SHIPPED"].includes(order.status)) {
+      throw new ConflictException("Shipment details can only be added after the seller accepts the order.");
+    }
+    const courierName = input.courierName.trim();
+    const trackingNumber = input.trackingNumber.trim();
+    if (!courierName || !trackingNumber) throw new ConflictException("Courier name and tracking number are required.");
+    const estimatedDeliveryAt = input.estimatedDeliveryAt ? new Date(input.estimatedDeliveryAt) : undefined;
+    if (estimatedDeliveryAt && Number.isNaN(estimatedDeliveryAt.getTime())) throw new ConflictException("Estimated delivery date is invalid.");
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.courierShipment.findUnique({ where: { sellerOrderId } });
+      const shipment = await tx.courierShipment.upsert({
+        where: { sellerOrderId },
+        create: {
+          sellerOrderId, courierName, trackingNumber, trackingUrl: input.trackingUrl || null,
+          estimatedDeliveryAt, status: "LABEL_CREATED",
+          events: { create: { status: "LABEL_CREATED", description: "Shipment tracking created by seller." } },
+        },
+        update: { courierName, trackingNumber, trackingUrl: input.trackingUrl || null, estimatedDeliveryAt },
+        include: { events: { orderBy: { occurredAt: "asc" } } },
+      });
+      if (existing) {
+        await tx.shipmentEvent.create({ data: { shipmentId: shipment.id, status: shipment.status, description: "Shipment details updated by seller." } });
+      }
+      await tx.orderEvent.create({
+        data: { orderId: (await tx.sellerOrder.findUniqueOrThrow({ where: { id: sellerOrderId }, select: { orderId: true } })).orderId,
+          actorUserId: userId, actorRole: "SELLER", eventType: "COURIER_TRACKING_UPDATED",
+          note: "Seller created or updated courier tracking details.", metadata: { sellerOrderId, courierName } },
+      });
+      return { shipment, message: "Courier tracking details saved." };
+    });
+  }
+
+  async updateShipmentStatus(authorization: string | undefined, sellerOrderId: string, input: { status: "PICKED_UP" | "IN_TRANSIT" | "OUT_FOR_DELIVERY" | "DELIVERED" | "DELIVERY_FAILED" | "RETURNED"; description?: string }) {
+    const { seller, userId } = await this.sellerContext(authorization);
+    const order = await this.prisma.sellerOrder.findFirst({ where: { id: sellerOrderId, sellerId: seller.id }, select: { id: true, orderId: true } });
+    if (!order) throw new NotFoundException("Seller order not found.");
+    const shipment = await this.prisma.courierShipment.findUnique({ where: { sellerOrderId } });
+    if (!shipment) throw new NotFoundException("Create courier tracking details before updating shipment status.");
+    const result = await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const updated = await tx.courierShipment.update({
+        where: { id: shipment.id },
+        data: {
+          status: input.status,
+          ...(input.status === "PICKED_UP" && !shipment.shippedAt ? { shippedAt: now } : {}),
+          ...(input.status === "DELIVERED" ? { deliveredAt: now } : {}),
+          events: { create: { status: input.status, description: input.description?.trim() || null, occurredAt: now } },
+        },
+        include: { events: { orderBy: { occurredAt: "asc" } } },
+      });
+      if (input.status === "PICKED_UP" || input.status === "IN_TRANSIT" || input.status === "OUT_FOR_DELIVERY") {
+        await tx.sellerOrder.update({ where: { id: sellerOrderId }, data: { status: "SHIPPED" } });
+      } else if (input.status === "DELIVERED") {
+        await tx.sellerOrder.update({ where: { id: sellerOrderId }, data: { status: "DELIVERED" } });
+      }
+      await tx.orderEvent.create({
+        data: { orderId: order.orderId, actorUserId: userId, actorRole: "SELLER", eventType: "COURIER_SHIPMENT_STATUS_UPDATED",
+          note: input.description?.trim() || `Courier shipment status changed to ${input.status}.`,
+          metadata: { sellerOrderId, shipmentId: shipment.id, status: input.status } },
+      });
+      const siblingStatuses = await tx.sellerOrder.findMany({ where: { orderId: order.orderId }, select: { status: true } });
+      if (siblingStatuses.length && siblingStatuses.every((item) => item.status === "DELIVERED")) {
+        await tx.order.update({ where: { id: order.orderId }, data: { status: "DELIVERED" } });
+      } else if (siblingStatuses.some((item) => item.status === "SHIPPED" || item.status === "DELIVERED")) {
+        await tx.order.update({ where: { id: order.orderId }, data: { status: "SHIPPED" } });
+      }
+      return updated;
+    }, { isolationLevel: "Serializable" });
+    return { shipment: result };
+  }
