@@ -1,0 +1,34 @@
+# ANAN
+
+> ANAN is a Bangladesh-focused online marketplace connecting shoppers with approved sellers. The storefront supports English and Bangla experiences and displays prices in Bangladeshi Taka (BDT).
+
+## Public pages
+- Homepage: https://anan.com/
+- Product catalogue: https://anan.com/products
+- Categories: https://anan.com/categories
+- Seller applications: https://anan.com/sell
+
+## Public catalogue
+- Product detail pages use the path pattern: https://anan.com/products/{product-slug}
+- Storefront pages use the path pattern: https://anan.com/stores/{store-slug}
+- Only products and sellers approved for public listing should be treated as available marketplace listings.
+- Product availability, stock, price and delivery eligibility may change. Verify current details on the live product page before relying on them.
+
+## Marketplace information
+- Marketplace currency: BDT (৳).
+- Initial market: Bangladesh.
+- The marketplace supports multiple independent sellers.
+- Seller applications are subject to administrative review; submitting an application does not mean a seller is approved.
+
+## Language and accessibility
+- English and Bangla are supported content languages.
+- Use the language available on each page and preserve Bangla product names and descriptions when present.
+
+## Policies and contact
+- Refer to the live website for current terms, privacy, delivery, returns and support information.
+- Do not infer unpublished policies, seller credentials, product claims or inventory.
+
+## Crawling guidance
+- Prefer canonical public URLs.
+- Do not crawl or expose account, authentication, cart, checkout, seller dashboard, admin or API routes.
+- Do not reproduce personal, order, payment, seller verification or other non-public information.
