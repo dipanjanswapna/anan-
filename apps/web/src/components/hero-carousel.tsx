@@ -88,7 +88,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
     >
       <div
         ref={regionRef}
-        className="group relative isolate overflow-hidden rounded-[26px] bg-[#1d1030] shadow-[0_26px_70px_-30px_rgba(38,16,66,.55)] sm:rounded-[32px]"
+        className="group relative isolate overflow-hidden rounded-[22px] bg-[#1d1030] shadow-[0_22px_60px_-32px_rgba(38,16,66,.5)] sm:rounded-[28px]"
         onPointerDown={(event) => {
           if (event.pointerType === "mouse") return;
           swipeStart.current = event.clientX;
@@ -121,7 +121,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 aria-hidden={!active}
                 inert={!active ? true : undefined}
               >
-                <div className="relative flex min-h-[440px] w-full items-end sm:min-h-[470px] sm:items-center lg:min-h-[530px] xl:min-h-[560px]">
+                <div className="relative flex min-h-[340px] w-full items-end sm:min-h-[380px] sm:items-center lg:min-h-[420px] xl:min-h-[450px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={slide.image}
@@ -139,20 +139,20 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                     className="absolute -right-24 -top-24 h-72 w-72 rounded-full border border-white/10 sm:h-96 sm:w-96"
                     aria-hidden
                   />
-                  <div className="relative z-10 w-full px-6 pb-24 pt-20 sm:px-10 sm:pb-20 sm:pt-20 lg:px-14 lg:pb-24 lg:pt-16 xl:px-[68px]">
+                  <div className="relative z-10 w-full px-6 pb-20 pt-14 sm:px-10 sm:pb-16 sm:pt-14 lg:px-14 lg:pb-20 lg:pt-12 xl:px-[68px]">
                     <div className="max-w-[560px]">
                       <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[.18em] text-white/90 backdrop-blur sm:text-[10px]">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#c9a6ff]" aria-hidden />
                         {slide.eyebrow}
                       </span>
-                      <h1 className="mt-4 text-[clamp(1.8rem,5.2vw,3.5rem)] font-extrabold leading-[1.06] tracking-[-0.03em] text-white sm:mt-5">
+                      <h1 className="mt-3 text-[clamp(1.7rem,4.6vw,3.15rem)] font-extrabold leading-[1.06] tracking-[-0.03em] text-white sm:mt-5">
                         {slide.title}{" "}
                         <span className="font-serif font-medium italic text-[#d8bcff]">{slide.highlight}</span>
                       </h1>
                       <p className="mt-3 max-w-[430px] text-[12.5px] leading-6 text-white/72 sm:mt-4 sm:text-sm sm:leading-7">
                         {slide.subtitle}
                       </p>
-                      <div className="mt-6 flex flex-wrap items-center gap-2.5 sm:mt-7 sm:gap-3">
+                      <div className="mt-5 flex flex-wrap items-center gap-2.5 sm:mt-6 sm:gap-3">
                         <Link
                           href={slide.cta.href}
                           className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[12px] font-extrabold text-[#2a1548] shadow-[0_10px_30px_rgba(0,0,0,.22)] transition hover:-translate-y-0.5 hover:bg-[#f3ebff] sm:h-12 sm:px-6 sm:text-[13px]"
