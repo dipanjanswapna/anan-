@@ -57,7 +57,19 @@ enum PaymentMethod {
   CASH_ON_DELIVERY
 }
 
-enum SellerPayoutStatus {\n  REQUESTED\n  APPROVED\n  REJECTED\n  PAID\n}\n\nenum SellerEarningStatus {\n  AVAILABLE\n  PAID\n}\n\nenum ReturnRequestStatus {
+enum SellerPayoutStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum SellerEarningStatus {
+  AVAILABLE
+  PAID
+}
+
+enum ReturnRequestStatus {
   REQUESTED
   APPROVED
   REJECTED
