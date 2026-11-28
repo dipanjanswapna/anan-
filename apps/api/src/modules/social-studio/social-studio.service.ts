@@ -192,6 +192,14 @@ export class SocialStudioService {
     const adminUserId = await this.adminContext(authorization);
     if (!["APPROVE", "REJECT"].includes(input.action) || (input.notes?.length ?? 0) > 1000) throw new BadRequestException("Invalid moderation decision.");
     return this.prisma.$transaction(async (tx) => {
+      if (input.action === "APPROVE") {
+        const candidate = await tx.socialPost.findUnique({ where: { id }, select: { status: true, mediaUrl: true } });
+        if (!candidate) throw new NotFoundException("Post not found.");
+        if (candidate.status !== "PENDING_REVIEW") throw new ConflictException("Only pending posts can be reviewed.");
+        if (candidate.mediaUrl.includes("/social/quarantine/")) {
+          throw new ConflictException("This media is still quarantined. It must pass the media safety pipeline before publication.");
+        }
+      }
       const result = await tx.socialPost.updateMany({
         where: { id, status: "PENDING_REVIEW" },
         data: {
