@@ -6,7 +6,9 @@ const apiBase = () => process.env.ANAN_API_URL ?? "http://localhost:4000/api/v1"
 async function forward(request: NextRequest, context: Context, method: "GET" | "POST" | "PATCH") {
   const { path } = await context.params;
   let upstreamPath: string | null = null;
-  if (path.length === 1 && path[0] === "dashboard" && method === "GET") upstreamPath = "/sellers/me/dashboard";\n  if (path.length === 1 && path[0] === "returns" && method === "GET") upstreamPath = "/sellers/me/returns";\n  if (path.length === 2 && path[0] === "returns" && /^[a-zA-Z0-9_-]{1,64}$/.test(path[1]) && method === "PATCH") upstreamPath = `/sellers/me/returns/${path[1]}`;
+  if (path.length === 1 && path[0] === "dashboard" && method === "GET") upstreamPath = "/sellers/me/dashboard";
+  if (path.length === 1 && path[0] === "returns" && method === "GET") upstreamPath = "/sellers/me/returns";
+  if (path.length === 2 && path[0] === "returns" && /^[a-zA-Z0-9_-]{1,64}$/.test(path[1]) && method === "PATCH") upstreamPath = `/sellers/me/returns/${path[1]}`;
   if (path.length === 3 && path[0] === "orders" && /^[a-zA-Z0-9_-]{1,64}$/.test(path[1]) && ["accept", "reject"].includes(path[2]) && method === "POST") {
     upstreamPath = `/sellers/me/orders/${path[1]}/${path[2]}`;
   }
@@ -24,4 +26,5 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
   }
 }
 export const GET = (request: NextRequest, context: Context) => forward(request, context, "GET");
-export const POST = (request: NextRequest, context: Context) => forward(request, context, "POST");\nexport const PATCH = (request: NextRequest, context: Context) => forward(request, context, "PATCH");
+export const POST = (request: NextRequest, context: Context) => forward(request, context, "POST");
+export const PATCH = (request: NextRequest, context: Context) => forward(request, context, "PATCH");
