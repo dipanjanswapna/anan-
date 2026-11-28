@@ -68,3 +68,44 @@ body { overflow-x: clip; }
 }
 /* Keep sticky purchase bars clear of iOS home indicator */
 .safe-bottom { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+
+
+/* ANAN brand system v2 — shared across storefront, Seller Centre and Admin. */
+:root {
+  color-scheme: light;
+  --anan-brand-950: #211137;
+  --anan-brand-900: #2d1749;
+  --anan-brand-800: #45216f;
+  --anan-brand-700: #5d2ca3;
+  --anan-brand-600: #7434df;
+  --anan-brand-500: #8754e8;
+  --anan-brand-100: #eee6ff;
+  --anan-brand-50: #f7f3ff;
+  --anan-ink: #211a2d;
+  --anan-muted: #756b82;
+  --anan-line: #ece7f2;
+  --anan-canvas: #fbfaff;
+  --anan-radius-card: 20px;
+  --anan-shadow-card: 0 12px 36px -26px rgba(42, 21, 71, .28);
+  --anan-shadow-float: 0 24px 64px -34px rgba(42, 21, 71, .38);
+}
+body { background: var(--anan-canvas); color: var(--anan-ink); }
+.container-shell { width: min(1320px, calc(100% - 48px)); }
+::selection { background: var(--anan-brand-100); color: var(--anan-brand-900); }
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid #a987f4;
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+.anan-surface { border: 1px solid var(--anan-line); border-radius: var(--anan-radius-card); background: #fff; box-shadow: var(--anan-shadow-card); }
+.anan-page-title { color: var(--anan-brand-950); font-weight: 800; letter-spacing: -.035em; }
+.anan-muted { color: var(--anan-muted); }
+.anan-sidebar { background: linear-gradient(180deg, #fff 0%, #fcfaff 100%); border-right: 1px solid var(--anan-line); }
+.anan-nav-link { display:flex; align-items:center; gap:.7rem; min-height:42px; padding:.65rem .85rem; border-radius:12px; color:#655a74; font-size:13px; font-weight:650; transition:background .18s ease,color .18s ease; }
+.anan-nav-link:hover { background:var(--anan-brand-50); color:var(--anan-brand-700); }
+.anan-nav-link[aria-current="page"] { background:var(--anan-brand-100); color:var(--anan-brand-800); box-shadow:inset 3px 0 0 var(--anan-brand-600); }
+.anan-panel { border:1px solid var(--anan-line); border-radius:18px; background:#fff; box-shadow:0 8px 28px -24px rgba(42,21,71,.28); }
+.anan-button-primary { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; min-height:44px; border-radius:999px; padding:.7rem 1.2rem; background:var(--anan-brand-600); color:#fff; font-size:13px; font-weight:750; box-shadow:0 8px 20px -12px rgba(116,52,223,.8); transition:transform .18s ease,background .18s ease,box-shadow .18s ease; }
+.anan-button-primary:hover { background:var(--anan-brand-700); transform:translateY(-1px); box-shadow:0 12px 24px -12px rgba(116,52,223,.7); }
+@media (max-width: 640px) { .container-shell { width: min(100% - 28px, 1320px); } }
+@media (prefers-reduced-motion: reduce) { .anan-button-primary:hover { transform:none; } }
