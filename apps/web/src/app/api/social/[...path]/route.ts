@@ -20,7 +20,7 @@ async function forward(request: NextRequest, context: Context, method: "GET" | "
   const token = request.cookies.get("anan_session")?.value;
   if (protectedRoute && !token) return NextResponse.json({ message: "Please sign in to continue." }, { status: 401 });
   try {
-    const hasBody = method === "POST" || method === "PATCH";
+    const hasBody = method === "PATCH" || (method === "POST" && (key === "me/profile" || key === "me/posts" || (path[0] === "admin" && path[1] === "posts" && path.length === 3)));
     const body = hasBody ? await request.json() : undefined;
     const url = new URL(apiBase() + upstreamPath);
     if (method === "GET") request.nextUrl.searchParams.forEach((value, name) => url.searchParams.set(name, value));
