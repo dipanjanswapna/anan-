@@ -95,11 +95,11 @@ export class CustomersService {
 
   async updateAddress(authorization: string | undefined, id: string, input: UpdateCustomerAddressDto) {
     const userId = await this.customerId(authorization);
-    const existing = await this.prisma.customerAddress.findFirst({ where: { id, userId }, select: { id: true } });
+    const existing = await this.prisma.customerAddress.findFirst({ where: { id, userId }, select: { id: true, isDefault: true } });
     if (!existing) throw new NotFoundException("Address not found.");
     const address = await this.prisma.$transaction(async (tx) => {
       if (input.isDefault === true) await tx.customerAddress.updateMany({ where: { userId }, data: { isDefault: false } });
-      return tx.customerAddress.update({
+      const updated = await tx.customerAddress.update({
         where: { id },
         data: {
           ...(input.label !== undefined ? { label: input.label.trim() } : {}),
@@ -114,6 +114,11 @@ export class CustomersService {
           ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
         },
       });
+      if (input.isDefault === false && existing.isDefault) {
+        const next = await tx.customerAddress.findFirst({ where: { userId }, orderBy: { createdAt: "desc" }, select: { id: true } });
+        if (next) await tx.customerAddress.update({ where: { id: next.id }, data: { isDefault: true } });
+      }
+      return updated;
     });
     return { address, message: "Delivery address updated." };
   }
