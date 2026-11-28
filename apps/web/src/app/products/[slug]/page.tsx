@@ -11,6 +11,7 @@ type Product = {
   pricePaisa: string; compareAtPricePaisa: string | null; stockOnHand: number;
   category: { nameEn: string; nameBn: string | null; slug: string };
   seller: { storeName: string; storeSlug: string };
+  images: { url: string | null; altText: string; isPrimary?: boolean }[];
 };
 const apiUrl = (process.env.ANAN_API_URL ?? "http://localhost:4000/api/v1").replace(/\/$/, "");
 const taka = (paisa: string) => {
@@ -44,6 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description,
       url: canonical,
       type: "website",
+      ...(product.images?.[0]?.url ? { images: [product.images[0].url] } : {}),
     },
     twitter: { card: "summary_large_image", title: product.nameEn, description },
   };
@@ -68,6 +70,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
     description: product.descriptionEn || product.nameEn,
     category: product.category.nameEn,
     url: productUrl,
+    ...(product.images?.length ? { image: product.images.map((image) => image.url).filter((url): url is string => Boolean(url)) } : {}),
     offers: {
       "@type": "Offer",
       url: productUrl,
@@ -100,7 +103,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
       <section className="container-shell py-7 sm:py-10">
         <Link href="/products" className="inline-flex items-center gap-2 text-sm font-semibold text-[#756987] hover:text-brand-600"><ArrowLeft size={16}/> Back to products</Link>
         <div className="mt-6 grid gap-7 lg:grid-cols-[1.05fr_.95fr]">
-          <div className="flex min-h-[320px] items-center justify-center rounded-3xl border border-[#eeeaf3] bg-gradient-to-br from-[#f5efff] to-[#fcfaff] text-brand-400 sm:min-h-[480px]"><Package size={104} strokeWidth={1}/></div>
+          <div className="flex min-h-[320px] items-center justify-center overflow-hidden rounded-3xl border border-[#eeeaf3] bg-gradient-to-br from-[#f5efff] to-[#fcfaff] text-brand-400 sm:min-h-[480px]">{product.images?.[0]?.url ? <img src={product.images[0].url} alt={product.images[0].altText} className="h-full max-h-[560px] w-full object-contain" /> : <Package size={104} strokeWidth={1}/>}</div>
           <div className="rounded-3xl border border-[#eeeaf3] bg-white p-6 sm:p-9">
             <Link href={`/products?category=${encodeURIComponent(product.category.slug)}`} className="text-[11px] font-bold uppercase tracking-[.16em] text-brand-600">{product.category.nameEn}</Link>
             <h1 className="mt-4 text-2xl font-extrabold leading-tight text-[#26183c] sm:text-3xl">{product.nameEn}</h1>
