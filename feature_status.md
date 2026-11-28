@@ -100,3 +100,19 @@ Every feature PR must update this ledger, `known_issues.md`, and relevant `docs/
 - Added authenticated persisted block-status lookup; Creator Storefront Block/Unblock state now rehydrates after refresh.
 - Fixed PATCH unblock routing and ensured signed-in viewers cannot open a creator storefront they have blocked.
 - No migration required; uses the existing CreatorBlock relation. PR #29 remains open pending fresh CI and review.
+
+
+## Social Studio — handoff snapshot (2026-11-28, PR #29; NOT merged)
+- Active branch: `feat/social-studio-creator-foundation`.
+- Latest observed feature HEAD: `c7ecca82b542cd9752db67190dcb5f1faa13e457`.
+- PR: https://github.com/dipanjanswapna/anan-/pull/29
+- PR base snapshot observed: `718b85f0d03d6c67e80d66d56f7305ff41e64359`; PR was reported one commit behind and `mergeable=false`. Re-check both SHAs before any work/merge.
+- Scope now implemented on the feature branch: creator profile/storefront; one IMAGE or VIDEO per post; controlled S3 presigned upload into creator-scoped quarantine; submit/review flow; Admin/Staff report and comment moderation; post reporting; creator block/unblock and blocked-creators page; follow/unfollow, like/unlike, comments (pending review), save/unsave; in-app notifications; public and following feeds with cursor pagination; authenticated action rate limits; creator summary analytics.
+- Safety guard: Admin cannot publish a post while its media URL remains under `social/quarantine/`. This intentionally fails closed; no media scanning/promotion pipeline exists yet.
+- Rate limits (authenticated user, fixed-minute DB buckets): follow 20/min, like 60/min, comment 8/min, report 5/min. No IP/device/anonymous edge throttling.
+- Analytics: followers, 30-day new followers, content status counts, 30-day likes/approved comments, latest 10 posts' like/comment totals. Reach/impressions are NOT implemented.
+- Data migrations on branch include Social Studio foundation, trust/safety, engagement and rate-limit additions. Inspect exact migration directory and schema before adding any further migration; do not assume any have been deployed.
+- Validation: an earlier foundation CI run succeeded (run 46144307456) but predates latest engagement/feed/rate-limit/analytics changes. No latest-head CI success is verified. No DB migration execution, browser/E2E, production storage config or deployment is verified.
+- Read `docs/social-studio.md` for API routes, behavior, storage settings and remaining limitations.
+- Next tasks, in order: (1) synchronize with latest main safely and re-check migration ordering/baseline; (2) add automated unit/integration tests and get latest-head CI green; (3) implement private quarantine + scanner/sanitizer + image re-encode/EXIF stripping + video codec/duration validation/transcoding + approved-object promotion; (4) add view/impression event model and privacy-aware analytics; (5) add appeals/evidence/escalation/retention and operational moderation workflow.
+- Do not merge until PR is current with main, migration chain is reviewed, latest CI is green, security review passes and mergeability is confirmed. Never describe Social Studio as production-ready.
