@@ -1,5 +1,5 @@
 import {
-  BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException,
+  BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, TooManyRequestsException, UnauthorizedException,
 } from "@nestjs/common";
 import { createHash } from "node:crypto";
 import { PrismaService } from "../../database/prisma.service";
@@ -22,6 +22,18 @@ export class SocialStudioService {
     if (!session) throw new UnauthorizedException("Your session has expired.");
     await this.prisma.customerSession.updateMany({ where: { id: session.id, revokedAt: null }, data: { lastUsedAt: new Date() } });
     return session.userId;
+  }
+
+  private async enforceSocialRateLimit(userId: string, action: string, maximum: number) {
+    const now = new Date();
+    const windowStart = new Date(Math.floor(now.getTime() / 60_000) * 60_000);
+    const bucket = await this.prisma.socialRateLimitBucket.upsert({
+      where: { userId_action_windowStart: { userId, action, windowStart } },
+      create: { userId, action, windowStart, count: 1 },
+      update: { count: { increment: 1 } },
+      select: { count: true },
+    });
+    if (bucket.count > maximum) throw new TooManyRequestsException("You are doing that too often. Please try again in a minute.");
   }
 
   private async adminContext(authorization?: string) {
@@ -209,6 +221,7 @@ export class SocialStudioService {
     });
     if (!post) throw new NotFoundException("Published post not found.");
     if (post.creator.userId === reporterUserId) throw new BadRequestException("You cannot report your own post.");
+    await this.enforceSocialRateLimit(reporterUserId, "REPORT", 5);
     try {
       return await this.prisma.socialPostReport.create({
         data: { postId, reporterUserId, reason: input.reason as never, details: input.details?.trim() || null },
@@ -308,6 +321,7 @@ export class SocialStudioService {
     const followerUserId = await this.userContext(authorization);
     const creator = await this.prisma.creatorProfile.findFirst({ where: { handle: handle.toLowerCase(), user: { isActive: true } }, select: { id: true, userId: true, displayName: true } });
     if (!creator) throw new NotFoundException("Creator not found.");
+    await this.enforceSocialRateLimit(followerUserId, "FOLLOW", 20);
     if (creator.userId === followerUserId) throw new BadRequestException("You cannot follow yourself.");
     const existing = await this.prisma.creatorFollow.findUnique({ where: { followerUserId_creatorProfileId: { followerUserId, creatorProfileId: creator.id } }, select: { id: true } });
     if (!existing) {
@@ -362,6 +376,7 @@ export class SocialStudioService {
     const userId = await this.userContext(authorization);
     const post = await this.prisma.socialPost.findFirst({ where: { id: postId, status: "PUBLISHED", creator: { user: { isActive: true } } }, select: { id: true, creator: { select: { userId: true } } } });
     if (!post) throw new NotFoundException("Published post not found.");
+    await this.enforceSocialRateLimit(userId, "LIKE", 60);
     const existing = await this.prisma.socialPostLike.findUnique({ where: { userId_postId: { userId, postId } }, select: { id: true } });
     if (existing) {
       await this.prisma.socialPostLike.delete({ where: { id: existing.id } });
@@ -380,6 +395,7 @@ export class SocialStudioService {
     const userId = await this.userContext(authorization);
     const post = await this.prisma.socialPost.findFirst({ where: { id: postId, status: "PUBLISHED", creator: { user: { isActive: true } } }, select: { id: true } });
     if (!post) throw new NotFoundException("Published post not found.");
+    await this.enforceSocialRateLimit(userId, "COMMENT", 8);
     const body = input.body.trim();
     if (!body || body.length > 1000) throw new BadRequestException("Comment must be between 1 and 1000 characters.");
     return this.prisma.socialPostComment.create({
